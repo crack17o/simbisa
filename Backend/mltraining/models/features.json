@@ -1,0 +1,17 @@
+[
+  "flux_entrants_moyen",
+  "flux_sortants_moyen",
+  "solde_moyen_mensuel",
+  "regularite_revenus_pct",
+  "volatilite_depenses_pct",
+  "nb_mois_actifs",
+  "progression_objectif_moy",
+  "taux_remboursement_pct",
+  "nb_defauts",
+  "anciennete_jours",
+  "montant_demande",
+  "duree_mois",
+  "age",
+  "revenu_estime",
+  "devise_demande"
+]

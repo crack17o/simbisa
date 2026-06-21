@@ -1,0 +1,14 @@
+# Dépendances entraînement ML — Simbisa
+# Python 3.13 / Windows : utiliser des wheels récents (pas de compilation C)
+
+pandas>=2.2.2
+numpy>=1.26.0
+scipy>=1.10.0
+scikit-learn>=1.6.0
+xgboost>=2.1.0
+joblib>=1.4.2
+pyyaml>=6.0.1
+
+# Optionnel (explicabilité)
+# shap>=0.45.1
+# lightgbm>=4.4.0

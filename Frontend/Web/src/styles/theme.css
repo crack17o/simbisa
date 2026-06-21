@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-noir:     #0A0A0A;
+  --color-surface:  #141414;
+  --color-panel:    #1A1A1A;
+  --color-or:       #D4AF37;
+  --color-or-light: #F0C040;
+  --color-blanc:    #F5F5F5;
+  --color-muted:    #9CA3AF;
+  --shadow-dark:    #050505;
+  --shadow-light:   #232323;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-blanc);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-or);
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #F0C040 0%, #D4AF37 50%, #A8861F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.neu-flat {
+  background: var(--color-panel);
+  box-shadow: 6px 6px 14px #050505, -6px -6px 14px #232323;
+  border-radius: 1.25rem;
+}
+
+.neu-inset {
+  background: var(--color-surface);
+  box-shadow: inset 4px 4px 10px #050505, inset -4px -4px 10px #232323;
+  border-radius: 1rem;
+}
+
+.neu-sm {
+  background: var(--color-panel);
+  box-shadow: 3px 3px 8px #050505, -3px -3px 8px #232323;
+  border-radius: 1rem;
+}
+
+.neu-pressed {
+  background: var(--color-panel);
+  box-shadow: inset 2px 2px 6px #050505, inset -2px -2px 6px #232323;
+  border-radius: 1rem;
+}
+
+.neu-gold-glow {
+  box-shadow: 0 0 20px rgba(212,175,55,0.3),
+              6px 6px 14px #050505,
+              -6px -6px 14px #232323;
+}
+
+.transition-neu {
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}

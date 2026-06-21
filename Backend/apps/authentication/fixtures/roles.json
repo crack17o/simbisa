@@ -1,0 +1,8 @@
+[
+  {"model": "authentication.role", "pk": 1, "fields": {"nom_role": "Client", "description": "Client Simbisa"}},
+  {"model": "authentication.role", "pk": 2, "fields": {"nom_role": "Agent de crédit", "description": "Agent de crédit Rawbank"}},
+  {"model": "authentication.role", "pk": 3, "fields": {"nom_role": "Responsable crédit", "description": "Responsable crédit"}},
+  {"model": "authentication.role", "pk": 4, "fields": {"nom_role": "Analyste risque", "description": "Analyste risque"}},
+  {"model": "authentication.role", "pk": 5, "fields": {"nom_role": "Administrateur", "description": "Administrateur système"}},
+  {"model": "authentication.role", "pk": 6, "fields": {"nom_role": "Auditeur", "description": "Auditeur conformité"}}
+]

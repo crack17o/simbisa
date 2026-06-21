@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+RUN groupadd -r simbisa && useradd -r -g simbisa simbisa
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev build-essential pkg-config && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements/ requirements/
+ARG REQUIREMENTS=development.txt
+RUN pip install --no-cache-dir -r requirements/${REQUIREMENTS}
+
+COPY . .
+RUN mkdir -p logs && chown -R simbisa:simbisa /app
+
+USER simbisa
+
+CMD ["celery", "-A", "config", "worker", "-l", "info"]

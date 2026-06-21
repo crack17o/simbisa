@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simbisa USSD — Simulateur *123#</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: 320px;
+      background: #1e293b;
+      border-radius: 28px;
+      padding: 1.5rem 1rem 2rem;
+      box-shadow: 0 25px 50px rgba(0,0,0,.5);
+      border: 3px solid #334155;
+    }
+    h1 {
+      font-size: 0.85rem;
+      text-align: center;
+      color: #94a3b8;
+      margin: 0 0 1rem;
+    }
+    .screen {
+      background: #0c1222;
+      border: 2px solid #22c55e;
+      border-radius: 8px;
+      min-height: 220px;
+      padding: 0.75rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #4ade80;
+    }
+    label { font-size: 0.75rem; color: #94a3b8; display: block; margin-top: 0.75rem; }
+    select, input, button {
+      width: 100%;
+      margin-top: 0.25rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #475569;
+      background: #334155;
+      color: #f1f5f9;
+      font-size: 0.9rem;
+    }
+    button {
+      background: #16a34a;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.75rem;
+    }
+    button:hover { background: #22c55e; }
+    button.secondary { background: #475569; margin-top: 0.35rem; }
+    .meta { font-size: 0.65rem; color: #64748b; margin-top: 0.5rem; text-align: center; }
+    .hint { font-size: 0.7rem; color: #64748b; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <h1>SIMBISA *123# — Simulateur telco</h1>
+    <div id="screen" class="screen">Composez *123# pour demarrer…</div>
+
+    <label>Numero (MSISDN)</label>
+    <select id="msisdn">
+      {% for tel in demo_phones %}
+      <option value="{{ tel }}">{{ tel }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Votre saisie</label>
+    <input id="input" type="text" placeholder="PIN, 1, 2…" maxlength="32" />
+
+    <button type="button" id="sendBtn">Envoyer</button>
+    <button type="button" class="secondary" id="startBtn">Nouvelle session *123#</button>
+
+    <p class="hint">PIN demo : <strong>{{ default_pin }}</strong> (apres seed_demo)</p>
+    <p class="meta" id="meta">Session: —</p>
+  </div>
+
+  <script>
+    const API = '{{ api_url }}';
+    let sessionId = '';
+
+    const screen = document.getElementById('screen');
+    const meta = document.getElementById('meta');
+
+    async function ussdCall(input) {
+      const body = {
+        msisdn: document.getElementById('msisdn').value,
+        input: input || '',
+        service_code: '*123#',
+        operator: 'simulator-web',
+      };
+      if (sessionId) body.session_id = sessionId;
+
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        screen.textContent = 'Erreur: ' + (json.error?.message || res.status);
+        return;
+      }
+      const d = json.data;
+      sessionId = d.end_session ? '' : d.session_id;
+      screen.textContent = d.message;
+      meta.textContent = 'Session: ' + (sessionId || 'terminee') + ' | ' + d.response_type;
+    }
+
+    document.getElementById('startBtn').onclick = () => {
+      sessionId = '';
+      ussdCall('');
+    };
+    document.getElementById('sendBtn').onclick = () => {
+      const v = document.getElementById('input').value;
+      document.getElementById('input').value = '';
+      ussdCall(v);
+    };
+    document.getElementById('input').onkeydown = (e) => {
+      if (e.key === 'Enter') document.getElementById('sendBtn').click();
+    };
+
+    document.getElementById('startBtn').click();
+  </script>
+</body>
+</html>

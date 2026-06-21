@@ -1,0 +1,30 @@
+{% extends "authentication/email/base.html" %}
+{% block title %}Bienvenue sur Simbisa{% endblock %}
+{% block content %}
+<p style="margin:0 0 8px;color:#f5f5f5;font-size:18px;">Bienvenue, <strong style="color:#F0C040;">{{ user_name }}</strong> !</p>
+<p style="margin:0 0 20px;color:#aaa;font-size:14px;line-height:1.7;">
+  Votre compte Simbisa Rawbank est actif. Vous pouvez dès maintenant accéder à l'épargne virtuelle,
+  demander un micro-crédit et suivre votre score en temps réel.
+</p>
+
+<div style="background:rgba(212,175,55,0.08);border-radius:12px;padding:20px;margin-bottom:24px;">
+  <p style="margin:0 0 12px;color:#D4AF37;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Votre compte</p>
+  <p style="margin:4px 0;color:#ccc;font-size:13px;">Téléphone : <strong style="color:#f5f5f5;">{{ telephone }}</strong></p>
+  {% if email %}
+  <p style="margin:4px 0;color:#ccc;font-size:13px;">E-mail : <strong style="color:#f5f5f5;">{{ email }}</strong></p>
+  {% endif %}
+  <p style="margin:4px 0;color:#ccc;font-size:13px;">Rôle : <strong style="color:#f5f5f5;">{{ role_name }}</strong></p>
+</div>
+
+<p style="margin:0 0 16px;color:#aaa;font-size:14px;line-height:1.6;">
+  Complétez votre profil et votre KYC pour débloquer toutes les fonctionnalités crédit.
+</p>
+
+{% if login_url %}
+<p style="text-align:center;margin:24px 0 0;">
+  <a href="{{ login_url }}" style="display:inline-block;background:linear-gradient(135deg,#A8861F,#D4AF37);color:#0a0a0a;text-decoration:none;font-weight:700;font-size:14px;padding:14px 32px;border-radius:10px;">
+    Accéder à mon espace
+  </a>
+</p>
+{% endif %}
+{% endblock %}

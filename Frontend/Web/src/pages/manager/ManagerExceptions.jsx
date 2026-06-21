@@ -1,0 +1,78 @@
+import React, { useCallback, useEffect, useState } from 'react'
+import DashboardLayout from '@/components/templates/DashboardLayout'
+import Badge from '@/components/atoms/Badge'
+import Button from '@/components/atoms/Button'
+import { AlertTriangle } from 'lucide-react'
+import { listExceptions, resolveException } from '@/api/manager'
+
+export default function ManagerExceptions() {
+  const [exceptions, setExceptions] = useState([])
+  const [error, setError] = useState('')
+  const [busyId, setBusyId] = useState(null)
+
+  const load = useCallback(() => {
+    listExceptions()
+      .then(res => setExceptions(res.data || []))
+      .catch(err => setError(err.message))
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const handleResolve = async (id, statut) => {
+    setBusyId(id)
+    setError('')
+    try {
+      await resolveException(id, { statut, observation: '' })
+      load()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  return (
+    <DashboardLayout title="Gestion des exceptions">
+      {error && <p className="text-sm text-danger mb-4">{error}</p>}
+      <div className="flex flex-col gap-4">
+        {exceptions.length === 0 && !error && (
+          <p className="text-sm text-muted">Aucune exception enregistrée.</p>
+        )}
+        {exceptions.map(ex => (
+          <div key={ex.id} className="neu-flat p-5 flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={20} className="text-warning flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted">{ex.ref} · {ex.client}</p>
+                <p className="font-semibold text-blanc">{ex.type_label || ex.type_exception}</p>
+                <p className="text-sm text-muted">{ex.motif}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge label={ex.statut} />
+              {ex.statut === 'ouverte' && (
+                <>
+                  <Button
+                    size="sm"
+                    loading={busyId === ex.id}
+                    onClick={() => handleResolve(ex.id, 'approuvee')}
+                  >
+                    Accorder
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    loading={busyId === ex.id}
+                    onClick={() => handleResolve(ex.id, 'rejetee')}
+                  >
+                    Refuser
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </DashboardLayout>
+  )
+}

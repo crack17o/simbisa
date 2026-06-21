@@ -1,0 +1,28 @@
+{% extends "authentication/email/base.html" %}
+{% block title %}Simbisa — Code de vérification{% endblock %}
+{% block content %}
+<p style="margin:0 0 8px;color:#f5f5f5;font-size:16px;">Bonjour <strong>{{ user_name }}</strong>,</p>
+<p style="margin:0 0 24px;color:#aaa;font-size:14px;line-height:1.6;">
+  {{ purpose_label }} — utilisez le code ci-dessous pour continuer.
+  Ce code expire dans <strong style="color:#D4AF37;">{{ validity_minutes }} minutes</strong>.
+</p>
+
+{% if reasons %}
+<div style="background:rgba(212,175,55,0.08);border-left:3px solid #D4AF37;border-radius:8px;padding:12px 16px;margin-bottom:24px;">
+  <p style="margin:0 0 6px;color:#D4AF37;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Motif</p>
+  {% for reason in reasons %}
+  <p style="margin:4px 0;color:#ccc;font-size:13px;">• {{ reason }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div style="text-align:center;margin:28px 0;">
+  <div style="display:inline-block;background:#0d0d0d;border:2px solid #D4AF37;border-radius:12px;padding:20px 40px;box-shadow:0 0 24px rgba(212,175,55,0.15);">
+    <span style="font-size:36px;font-weight:700;letter-spacing:10px;color:#F0C040;font-family:monospace;">{{ otp_code }}</span>
+  </div>
+</div>
+
+<p style="margin:0;color:#666;font-size:12px;line-height:1.6;text-align:center;">
+  Ne partagez jamais ce code. L'équipe Simbisa ne vous le demandera jamais par téléphone.
+</p>
+{% endblock %}

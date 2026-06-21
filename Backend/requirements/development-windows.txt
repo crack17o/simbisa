@@ -1,0 +1,41 @@
+# Dépendances backend — Windows (sans mysqlclient, compilateur C requis)
+# Usage: .\.venv\Scripts\pip install -r requirements\development-windows.txt
+
+Django==5.0.6
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.4.0
+django-filter==24.3
+django-extensions==3.2.3
+PyMySQL==1.1.1
+redis==5.0.7
+celery==5.4.0
+django-celery-beat==2.6.0
+django-celery-results==2.5.1
+Pillow==10.4.0
+python-decouple==3.8
+whitenoise==6.7.0
+drf-spectacular==0.27.2
+django-ratelimit==4.1.0
+cryptography==42.0.8
+pyotp==2.9.0
+qrcode==7.4.2
+pydantic>=2.10,<3
+
+# ML (optionnel — décommenter si besoin scoring IA local)
+# xgboost==2.0.3
+# scikit-learn==1.5.0
+# numpy>=1.26.0
+# pandas==2.2.2
+# joblib==1.4.2
+# shap==0.45.1
+# lime==0.2.0.1
+
+# Dev / tests
+pytest==8.2.2
+pytest-django==4.8.0
+pytest-cov==5.0.0
+factory-boy==3.3.0
+Faker==25.8.0
+django-debug-toolbar==4.4.2
+ipython==8.25.0

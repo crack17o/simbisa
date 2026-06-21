@@ -1,0 +1,78 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: simbisa_db
+      MYSQL_USER: simbisa_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-simbisa_dev_password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-simbisa_root_password}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-simbisa_root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+    env_file:
+      - .env
+    volumes:
+      - media_files:/app/media
+      - ./logs:/app/logs
+      - ./mltraining/models:/app/mltraining/models:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.celery
+    command: celery -A config worker -l info -Q default,scoring,rag --concurrency 4
+    env_file:
+      - .env
+    volumes:
+      - ./mltraining/models:/app/mltraining/models:ro
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.celery
+    command: celery -A config beat -l info
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  mysql_data:
+  redis_data:
+  media_files:

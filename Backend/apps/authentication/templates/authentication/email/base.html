@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Simbisa Rawbank{% endblock %}</title>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:Segoe UI,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0a0a0a;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:linear-gradient(145deg,#1a1a1a,#121212);border-radius:16px;border:1px solid rgba(212,175,55,0.25);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+          <tr>
+            <td style="padding:28px 32px 16px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:28px;font-weight:700;letter-spacing:2px;color:#D4AF37;">SIMBISA</div>
+              <div style="font-size:11px;color:#888;margin-top:4px;letter-spacing:3px;text-transform:uppercase;">Rawbank · Micro-crédit intelligent</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              {% block content %}{% endblock %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px;background:rgba(0,0,0,0.35);text-align:center;border-top:1px solid rgba(255,255,255,0.05);">
+              <p style="margin:0;color:#555;font-size:11px;">© {{ year }} Simbisa · Rawbank RDC</p>
+              {% block footer_extra %}{% endblock %}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
