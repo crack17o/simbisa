@@ -4,48 +4,16 @@ import ScoreMotorCard from '@/components/molecules/ScoreMotorCard'
 import Badge from '@/components/atoms/Badge'
 
 const MOTORS = [
-  {
-    name: 'Règles',
-    weight: 25,
-    details: [
-      { label: 'KYC validé',      value: '✓' },
-      { label: 'Âge',             value: '28 ans' },
-      { label: 'Arriérés actifs', value: 'Aucun' },
-    ]
-  },
-  {
-    name: 'Comportemental',
-    weight: 25,
-    details: [
-      { label: 'Objectif épargne atteint', value: '78%' },
-      { label: 'Crédits remboursés',       value: '2/2' },
-      { label: 'Activité plateforme',      value: 'Élevée' },
-    ]
-  },
-  {
-    name: 'Mobile Money',
-    weight: 25,
-    details: [
-      { label: 'Flux entrants moy.',  value: '$340/mois' },
-      { label: 'Régularité revenus',  value: '87%' },
-      { label: 'Solde moyen mensuel', value: '$120' },
-    ]
-  },
-  {
-    name: 'IA XGBoost',
-    weight: 25,
-    details: [
-      { label: 'Proba. défaut',  value: '12.4%' },
-      { label: 'Niveau risque',  value: 'Faible' },
-      { label: 'Modèle version', value: 'v2.3.1' },
-    ]
-  },
+  { name: 'Règles',         weight: 25 },
+  { name: 'Comportemental', weight: 25 },
+  { name: 'Mobile Money',   weight: 25 },
+  { name: 'IA XGBoost',     weight: 25 },
 ]
 
 export default function ScoringPanel({ scores, globalScore, riskLevel }) {
   const motors = MOTORS.map((m, i) => ({
     ...m,
-    score: scores?.[i] ?? Math.floor(55 + Math.random() * 40),
+    score: scores?.[i] ?? 0,
   }))
 
   return (
@@ -56,7 +24,7 @@ export default function ScoringPanel({ scores, globalScore, riskLevel }) {
       </div>
 
       <div className="flex flex-col items-center py-2">
-        <ScoreRing score={globalScore || 74} size={140} label="Score global" />
+        <ScoreRing score={globalScore ?? 0} size={140} label="Score global" />
       </div>
 
       <div className="grid grid-cols-1 gap-3">

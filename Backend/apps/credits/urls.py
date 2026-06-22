@@ -9,4 +9,5 @@ urlpatterns = [
     path('demandes/', staff_views.list_demandes_view, name='credit-demandes-list'),
     path('demandes/<int:demande_pk>/decision/', staff_views.demande_decision_view, name='credit-demande-decision'),
     path('<int:credit_pk>/remboursement/', views.remboursement_view, name='remboursement'),
+    path('<int:credit_pk>/echeances/', views.credit_echeances_view, name='credit-echeances'),
 ]

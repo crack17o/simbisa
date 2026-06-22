@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import { listAuditDecisions } from '@/api/audit'
@@ -7,20 +8,19 @@ import { formatMoney } from '@/utils/apiHelpers'
 
 export default function AuditDecisions() {
   const [decisions, setDecisions] = useState([])
-  const [error, setError] = useState('')
+  const [hasError, setHasError] = useState(false)
 
   useEffect(() => {
     listAuditDecisions()
       .then(res => setDecisions(res.data || []))
-      .catch(err => setError(err.message))
+      .catch(err => { toast.error(err.message); setHasError(true) })
   }, [])
 
   return (
     <DashboardLayout title="Traçabilité des décisions crédit">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-4">
-        {decisions.length === 0 && !error && (
-          <p className="text-sm text-muted">Aucune décision enregistrée — lancez seed_demo avec scoring.</p>
+        {decisions.length === 0 && !hasError && (
+          <p className="text-sm text-muted">Aucune décision enregistrée.</p>
         )}
         {decisions.map(d => (
           <div key={d.id} className="neu-flat p-5 flex items-center justify-between gap-4">

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import ScoringPanel from '@/components/organisms/ScoringPanel'
 import Button from '@/components/atoms/Button'
@@ -14,14 +15,12 @@ export default function ScoringDetail() {
   const isClient = user?.role === ROLES.CLIENT
   const title = isClient ? 'Mon score (XAI)' : 'Scoring détaillé (XAI)'
   const [data, setData] = useState(null)
-  const [error, setError] = useState('')
   const [demandeId, setDemandeId] = useState(searchParams.get('demande_id') || '')
   const [loading, setLoading] = useState(false)
 
   const loadDemande = useCallback(async (id) => {
     if (!id) return
     setLoading(true)
-    setError('')
     try {
       const res = await getScoringDetail(id)
       setData({
@@ -30,7 +29,7 @@ export default function ScoringDetail() {
       })
       setSearchParams({ demande_id: id })
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
       setData(null)
     } finally {
       setLoading(false)
@@ -41,7 +40,7 @@ export default function ScoringDetail() {
     if (isClient) {
       getMyScore()
         .then(res => setData(res.data))
-        .catch(err => setError(err.message))
+        .catch(err => toast.error(err.message))
     }
   }, [isClient])
 
@@ -74,7 +73,6 @@ export default function ScoringDetail() {
 
   return (
     <DashboardLayout title={title}>
-      {error && <div className="mb-4 text-sm text-danger">{error}</div>}
 
       {!isClient && (
         <div className="mb-6 neu-flat p-4 flex flex-wrap items-end gap-3">
@@ -108,13 +106,11 @@ export default function ScoringDetail() {
           </div>
           <p className="text-xs text-muted flex items-start gap-1.5">
             <Info size={12} className="mt-0.5 flex-shrink-0" />
-            {isClient
-              ? 'Données issues de GET /api/v1/scoring/me/'
-              : 'Données issues de GET /api/v1/scoring/{demande_id}/'}
+            Contribution de chaque variable au score final (valeurs SHAP).
           </p>
 
           {shapFeatures.length === 0 && (
-            <p className="text-sm text-muted">Aucune valeur SHAP — lancez un scoring ou seed_demo avec scoring.</p>
+            <p className="text-sm text-muted">Soumettez une demande de crédit pour obtenir une analyse explicative.</p>
           )}
 
           <div className="flex flex-col gap-3">

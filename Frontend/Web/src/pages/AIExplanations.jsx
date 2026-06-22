@@ -34,7 +34,8 @@ export default function AIExplanations() {
             <CreditDecisionBanner
               decision={d.decision === 'approuvee' ? 'approuve' : d.decision}
               montant={detail.montant_demande}
-              duree={3}
+              duree={detail.duree_mois}
+              devise={detail.devise}
               motif={d.motif}
               explication={d.explication_ia || d.motif}
             />

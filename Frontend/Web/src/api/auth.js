@@ -70,3 +70,10 @@ export function mfaSetupApi() {
 export function mfaVerifyApi(otp_token) {
   return apiRequest('/api/v1/auth/mfa/verify/', { method: 'POST', body: { otp_token } })
 }
+
+export function changePasswordApi({ old_password, new_password, new_password_confirm }) {
+  return apiRequest('/api/v1/auth/change-password/', {
+    method: 'POST',
+    body: { old_password, new_password, new_password_confirm },
+  })
+}

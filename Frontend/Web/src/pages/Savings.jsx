@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import SavingsWidget from '@/components/organisms/SavingsWidget'
 import StatCard from '@/components/molecules/StatCard'
@@ -11,7 +12,6 @@ import { formatDate } from '@/utils/formatters'
 export default function Savings() {
   const [accounts, setAccounts] = useState([])
   const [operations, setOperations] = useState([])
-  const [error, setError] = useState('')
 
   const loadOperations = (accountId) => {
     if (!accountId) return
@@ -28,7 +28,7 @@ export default function Savings() {
         const first = list[0]
         if (first) loadOperations(first.id)
       })
-      .catch(err => setError(err.message))
+      .catch(err => toast.error(err.message))
   }
 
   useEffect(() => { load() }, [])
@@ -39,20 +39,27 @@ export default function Savings() {
   const totalCdf = parseFloat(cdfAccount?.solde || 0)
 
   const handleDepot = async (account, amount) => {
-    await depotSavings(account.id, { montant: String(amount), description: 'Dépôt via Simbisa Web' })
-    load()
+    try {
+      await depotSavings(account.id, { montant: String(amount), description: 'Dépôt via Simbisa Web' })
+      toast.success('Dépôt enregistré.')
+      load()
+    } catch (err) {
+      toast.error(err.message)
+    }
   }
 
   const handleRetrait = async (account, amount) => {
-    await retraitSavings(account.id, { montant: String(amount), description: 'Retrait via Simbisa Web' })
-    load()
+    try {
+      await retraitSavings(account.id, { montant: String(amount), description: 'Retrait via Simbisa Web' })
+      toast.success('Retrait effectué.')
+      load()
+    } catch (err) {
+      toast.error(err.message)
+    }
   }
 
   return (
     <DashboardLayout title="Épargne virtuelle">
-      {error && (
-        <div className="mb-4 bg-danger/10 border border-danger/20 rounded-xl px-4 py-3 text-sm text-danger">{error}</div>
-      )}
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Épargne USD" value={formatMoney(totalUsd, 'USD')} sub={usdAccount?.objectif_description || '—'} icon={PiggyBank} accentColor="#D4AF37" />
@@ -76,13 +83,13 @@ export default function Savings() {
             />
           )}
           {!usdAccount && !cdfAccount && (
-            <p className="text-sm text-muted">Aucun compte épargne — créés automatiquement par le seed demo.</p>
+            <p className="text-sm text-muted">Aucun compte épargne actif. Contactez un agent pour en créer un.</p>
           )}
           <div className="neu-flat p-6 flex flex-col gap-4">
             <h3 className="font-display font-bold text-blanc">Impact sur le scoring</h3>
             <p className="text-sm text-muted leading-relaxed">
-              Chaque dépôt régulier renforce votre score comportemental visible sur
-              <strong className="text-blanc"> GET /api/v1/scoring/me/</strong>.
+              Chaque dépôt régulier renforce votre score comportemental.
+              Consultez votre espace scoring pour suivre votre progression.
             </p>
           </div>
         </div>

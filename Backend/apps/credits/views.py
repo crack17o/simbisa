@@ -9,10 +9,10 @@ from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, SerializerMethodField, DecimalField, ChoiceField, Serializer
 from drf_spectacular.utils import extend_schema
 
-from apps.core.permissions import IsClient
+from apps.core.permissions import IsClient, IsAgentOrManager
 from apps.core.currency import DEVISE_CHOICES, symbole, get_credit_limits, valider_montant_credit
 from apps.core.exceptions import KYCNotValidatedError, ActiveCreditExistsError, SimbisaException
-from .models import DemandeCredit, Credit, Remboursement
+from .models import DemandeCredit, Credit, Echeance, Remboursement
 from .tasks import process_credit_scoring
 
 logger = logging.getLogger('apps.credits')
@@ -196,3 +196,56 @@ def remboursement_view(request, credit_pk):
             'credit_statut': credit.statut,
         }
     }, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=['Credits'])
+@api_view(['GET'])
+def credit_echeances_view(request, credit_pk):
+    try:
+        credit = Credit.objects.select_related(
+            'id_demande__id_client__id_utilisateur'
+        ).get(pk=credit_pk)
+    except Credit.DoesNotExist:
+        return Response(
+            {'success': False, 'error': {'message': 'Crédit introuvable.'}},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # Vérifie l'accès : client propriétaire ou agent/manager/staff
+    is_owner = (
+        hasattr(request.user, 'client_profile')
+        and credit.id_demande.id_client == request.user.client_profile
+    )
+    if not is_owner and not request.user.is_staff:
+        role_nom = getattr(getattr(request.user, 'role', None), 'nom_role', '')
+        allowed = ['Agent de crédit', 'Responsable crédit', 'Analyste risque', 'Administrateur', 'Auditeur']
+        if role_nom not in allowed:
+            return Response(
+                {'success': False, 'error': {'message': 'Accès refusé.'}},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+    echeances = credit.echeances.order_by('date_echeance')
+    data = {
+        'credit_id': credit.pk,
+        'devise': credit.devise,
+        'symbole': symbole(credit.devise),
+        'montant_accorde': str(credit.montant_accorde),
+        'mensualite': str(credit.mensualite),
+        'solde_restant': str(credit.solde_restant),
+        'statut': credit.statut,
+        'date_debut': credit.date_debut,
+        'date_fin': credit.date_fin,
+        'echeances': [
+            {
+                'id': e.pk,
+                'montant': str(e.montant),
+                'date_echeance': e.date_echeance,
+                'statut': e.statut,
+                'montant_paye': str(e.montant_paye),
+                'restant': str(max(e.montant - e.montant_paye, 0)),
+            }
+            for e in echeances
+        ],
+    }
+    return Response({'success': True, 'data': data})

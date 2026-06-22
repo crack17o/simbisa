@@ -5,6 +5,7 @@ import 'package:simbisa/core/services/credit_service.dart';
 import 'package:simbisa/core/theme/app_theme.dart';
 import 'package:simbisa/core/theme/widgets.dart';
 import 'package:simbisa/core/utils/formatters.dart';
+import 'package:simbisa/features/credit/screens/echeancier_screen.dart';
 
 class MyCreditsScreen extends StatefulWidget {
   const MyCreditsScreen({super.key});
@@ -192,6 +193,31 @@ class _CreditCard extends StatelessWidget {
               ],
             ),
           ),
+          if (item.credit != null) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EcheancierScreen(
+                    creditId: item.credit!.id,
+                    devise: item.devise,
+                    symbole: item.symbole,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.calendar_month_rounded, size: 14, color: SimbisaColors.or),
+                  const SizedBox(width: 6),
+                  Text('Voir l\'échéancier', style: SimbisaText.body(12, color: SimbisaColors.or, weight: FontWeight.w600)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right_rounded, size: 14, color: SimbisaColors.or),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

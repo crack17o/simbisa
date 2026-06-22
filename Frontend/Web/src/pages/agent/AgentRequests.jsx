@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import Button from '@/components/atoms/Button'
@@ -13,31 +14,32 @@ export default function AgentRequests() {
   const [requests, setRequests] = useState([])
   const [selected, setSelected] = useState(null)
   const [observation, setObservation] = useState('')
-  const [error, setError] = useState('')
+  const [hasError, setHasError] = useState(false)
   const [busyId, setBusyId] = useState(null)
 
   const load = useCallback(() => {
+    setHasError(false)
     listDemandes()
       .then(res => setRequests(res.data || []))
-      .catch(err => setError(err.message))
+      .catch(err => { toast.error(err.message); setHasError(true) })
   }, [])
 
   useEffect(() => { load() }, [load])
 
   const handleDecision = async (demandeId, decision) => {
     setBusyId(demandeId)
-    setError('')
     try {
       await submitDemandeDecision(demandeId, {
         decision,
         motif: `Décision agent : ${decision}`,
         observation,
       })
+      toast.success(decision === 'approuve' ? 'Demande approuvée.' : 'Demande rejetée.')
       setSelected(null)
       setObservation('')
       load()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setBusyId(null)
     }
@@ -45,9 +47,8 @@ export default function AgentRequests() {
 
   return (
     <DashboardLayout title="Demandes de crédit">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-4">
-        {requests.length === 0 && !error && (
+        {requests.length === 0 && !hasError && (
           <p className="text-sm text-muted">Aucune demande de crédit.</p>
         )}
         {requests.map(r => (

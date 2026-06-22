@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Phone, Lock, User, Mail, MapPin } from 'lucide-react'
+import { toast } from 'sonner'
 import AuthLayout from '@/components/templates/AuthLayout'
 import FormField from '@/components/molecules/FormField'
 import Button from '@/components/atoms/Button'
@@ -17,35 +18,33 @@ export default function Register() {
     commune_kinshasa: '', password: '', password_confirm: '',
   })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     listCommunes()
       .then(res => setCommunes(res.data || []))
-      .catch(() => setError('Impossible de charger les communes.'))
+      .catch(() => toast.error('Impossible de charger les communes.'))
   }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.commune_kinshasa) {
-      setError('Sélectionnez votre commune de résidence.')
+      toast.error('Sélectionnez votre commune de résidence.')
       return
     }
     if (form.password !== form.password_confirm) {
-      setError('Les mots de passe ne correspondent pas.')
+      toast.error('Les mots de passe ne correspondent pas.')
       return
     }
     if (form.password.length < 8) {
-      setError('Mot de passe minimum : 8 caractères.')
+      toast.error('Mot de passe minimum : 8 caractères.')
       return
     }
-    setError('')
     setLoading(true)
     try {
       const user = await register(form)
       navigate(getHomeRoute(user.role), { replace: true })
     } catch (err) {
-      setError(err.message || 'Inscription impossible.')
+      toast.error(err.message || 'Inscription impossible.')
     } finally {
       setLoading(false)
     }
@@ -56,12 +55,8 @@ export default function Register() {
       <div className="neu-flat p-8 flex flex-col gap-6">
         <div>
           <h1 className="font-display font-bold text-2xl text-blanc">Créer un compte</h1>
-          <p className="text-muted text-sm mt-1">Inclusion financière pour tous — Rawbank Simbisa</p>
+          <p className="text-muted text-sm mt-1">Inclusion financière pour tous — Simbisa</p>
         </div>
-
-        {error && (
-          <div className="bg-danger/10 border border-danger/20 rounded-xl px-4 py-3 text-sm text-danger">{error}</div>
-        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <FormField label="Téléphone (+243)" name="telephone" type="tel" icon={Phone}

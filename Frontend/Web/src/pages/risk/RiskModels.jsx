@@ -1,31 +1,63 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import StatCard from '@/components/molecules/StatCard'
 import Badge from '@/components/atoms/Badge'
-import { Activity, BarChart2, Cpu } from 'lucide-react'
-import { getRiskModels } from '@/api/risk'
+import { Activity, BarChart2, Cpu, Server } from 'lucide-react'
+import { getRiskModels, getRiskDashboard, getRiskModelStatus } from '@/api/risk'
 
 export default function RiskModels() {
   const [data, setData] = useState(null)
-  const [error, setError] = useState('')
+  const [dash, setDash] = useState(null)
+  const [status, setStatus] = useState(null)
 
   useEffect(() => {
-    getRiskModels()
-      .then(res => setData(res.data))
-      .catch(err => setError(err.message))
+    Promise.all([getRiskModels(), getRiskDashboard(), getRiskModelStatus()])
+      .then(([modelsRes, dashRes, statusRes]) => {
+        setData(modelsRes.data)
+        setDash(dashRes.data)
+        setStatus(statusRes.data)
+      })
+      .catch(err => toast.error(err.message))
   }, [])
 
   const active = data?.modele_actif
   const historique = data?.historique || []
+  const auc = dash?.auc_modele ?? null
+  const seuil = dash?.seuil_approbation ?? null
 
   return (
     <DashboardLayout title="Performance des modèles">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-6">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard label="Modèle actif" value={data?.type || 'XGBoost'} sub={data?.version || '—'} icon={Cpu} accentColor="#D4AF37" />
-          <StatCard label="Fichiers modèle" value={String(historique.length)} sub="mltraining/models" icon={Activity} accentColor="#34D399" />
-          <StatCard label="AUC validation" value="0.87" sub="Seuil H1 : > 0.85 ✓" icon={BarChart2} accentColor="#60A5FA" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Modèle actif"
+            value={data?.type || 'XGBoost'}
+            sub={data?.version || '—'}
+            icon={Cpu}
+            accentColor="#D4AF37"
+          />
+          <StatCard
+            label="Versions archivées"
+            value={String(historique.length)}
+            sub="Historique modèles"
+            icon={Activity}
+            accentColor="#34D399"
+          />
+          <StatCard
+            label="AUC validation"
+            value={auc !== null ? String(auc) : '—'}
+            sub={seuil !== null ? `Seuil approbation : ${seuil}/100` : 'Non disponible'}
+            icon={BarChart2}
+            accentColor="#60A5FA"
+          />
+          <StatCard
+            label="Statut moteur IA"
+            value={status?.status === 'ok' ? 'Opérationnel' : status?.status || '—'}
+            sub={status?.model_loaded ? 'Modèle chargé' : 'Modèle non chargé'}
+            icon={Server}
+            accentColor={status?.status === 'ok' ? '#34D399' : '#EF4444'}
+          />
         </div>
 
         <div className="flex flex-col gap-4">
@@ -51,8 +83,8 @@ export default function RiskModels() {
               <Badge label={m.name === active?.name ? 'actif' : 'archive'} />
             </div>
           ))}
-          {!active && historique.length === 0 && !error && (
-            <p className="text-sm text-muted">Aucun modèle trouvé dans mltraining/models/</p>
+          {!active && historique.length === 0 && (
+            <p className="text-sm text-muted">Aucun modèle disponible.</p>
           )}
         </div>
       </div>

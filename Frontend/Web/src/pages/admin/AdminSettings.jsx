@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Button from '@/components/atoms/Button'
 import FormField from '@/components/molecules/FormField'
@@ -18,31 +19,25 @@ export default function AdminSettings() {
     max_tentatives_connexion: 5,
   })
   const [cdfPerUsd, setCdfPerUsd] = useState(2250)
-  const [rateMsg, setRateMsg] = useState('')
-  const [rateError, setRateError] = useState('')
-  const [secMsg, setSecMsg] = useState('')
-  const [secError, setSecError] = useState('')
   const [savingRate, setSavingRate] = useState(false)
   const [savingSec, setSavingSec] = useState(false)
 
   useEffect(() => {
     getAdminExchangeRate()
       .then(res => setCdfPerUsd(res.data.cdf_per_usd))
-      .catch(err => setRateError(err.message))
+      .catch(err => toast.error(err.message))
     getAdminSecurity()
       .then(res => setSettings(prev => ({ ...prev, ...res.data })))
-      .catch(err => setSecError(err.message))
+      .catch(err => toast.error(err.message))
   }, [])
 
   const saveRate = async () => {
     setSavingRate(true)
-    setRateError('')
-    setRateMsg('')
     try {
       const res = await updateExchangeRate(parseInt(cdfPerUsd, 10))
-      setRateMsg(res.message)
+      toast.success(res.message || 'Taux de change enregistré.')
     } catch (err) {
-      setRateError(err.message)
+      toast.error(err.message)
     } finally {
       setSavingRate(false)
     }
@@ -50,8 +45,6 @@ export default function AdminSettings() {
 
   const saveSecurity = async () => {
     setSavingSec(true)
-    setSecError('')
-    setSecMsg('')
     try {
       const res = await updateAdminSecurity({
         mfa_obligatoire_agents: settings.mfa_obligatoire_agents,
@@ -59,9 +52,9 @@ export default function AdminSettings() {
         session_timeout_minutes: settings.session_timeout_minutes,
       })
       setSettings(prev => ({ ...prev, ...res.data }))
-      setSecMsg(res.message)
+      toast.success(res.message || 'Paramètres de sécurité enregistrés.')
     } catch (err) {
-      setSecError(err.message)
+      toast.error(err.message)
     } finally {
       setSavingSec(false)
     }
@@ -82,8 +75,6 @@ export default function AdminSettings() {
             value={cdfPerUsd}
             onChange={e => setCdfPerUsd(e.target.value)}
           />
-          {rateMsg && <p className="text-sm text-success">{rateMsg}</p>}
-          {rateError && <p className="text-sm text-danger">{rateError}</p>}
           <Button loading={savingRate} onClick={saveRate}>Enregistrer le taux</Button>
         </div>
 
@@ -118,8 +109,6 @@ export default function AdminSettings() {
             />
           </div>
 
-          {secMsg && <p className="text-sm text-success">{secMsg}</p>}
-          {secError && <p className="text-sm text-danger">{secError}</p>}
           <Button variant="secondary" icon={Lock} loading={savingSec} onClick={saveSecurity}>
             Enregistrer sécurité
           </Button>

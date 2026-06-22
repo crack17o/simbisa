@@ -1,21 +1,20 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import { listAdminRoles } from '@/api/admin'
 
 export default function AdminRoles() {
   const [roles, setRoles] = useState([])
-  const [error, setError] = useState('')
 
   useEffect(() => {
     listAdminRoles()
       .then(res => setRoles(res.data || []))
-      .catch(err => setError(err.message))
+      .catch(err => toast.error(err.message))
   }, [])
 
   return (
     <DashboardLayout title="Gestion des rôles">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-4">
         {roles.map(r => (
           <div key={r.name} className="neu-flat p-5 flex items-center justify-between gap-4">

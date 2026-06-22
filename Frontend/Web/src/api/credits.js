@@ -29,3 +29,7 @@ export function listDemandesSensibles() {
 export function submitDemandeDecision(demandeId, data) {
   return apiRequest(`/api/v1/credits/demandes/${demandeId}/decision/`, { method: 'POST', body: data })
 }
+
+export function getEcheances(creditId) {
+  return apiRequest(`/api/v1/credits/${creditId}/echeances/`)
+}

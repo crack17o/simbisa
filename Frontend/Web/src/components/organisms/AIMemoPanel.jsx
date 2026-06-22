@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
-import { Sparkles, Copy, RefreshCw, Check } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Sparkles, Copy, RefreshCw, Check, Wifi, WifiOff } from 'lucide-react'
 import Button from '@/components/atoms/Button'
-import { generateMemo } from '@/api/rag'
+import { generateMemo, getRagStatus } from '@/api/rag'
 import { useAuth } from '@/context/AuthContext'
 import { ROLES } from '@/constants/roles'
 
-const MOCK_MEMO = `Mémo non disponible — connectez-vous en agent et fournissez un demande_id, ou consultez explication_ia du scoring.`
+const FALLBACK_MEMO = `Aucune explication disponible pour cette demande. Soumettez une demande de crédit pour obtenir une analyse IA détaillée.`
 
 export default function AIMemoPanel({ memo: memoProp, demandeId }) {
   const { user } = useAuth()
@@ -13,14 +14,21 @@ export default function AIMemoPanel({ memo: memoProp, demandeId }) {
   const [generating, setGenerating] = useState(false)
   const [memo, setMemo] = useState(memoProp || null)
   const [copied, setCopied] = useState(false)
+  const [ragOnline, setRagOnline] = useState(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (memoProp) setMemo(memoProp)
   }, [memoProp])
 
+  useEffect(() => {
+    getRagStatus()
+      .then(res => setRagOnline(res.data?.status === 'ok'))
+      .catch(() => setRagOnline(false))
+  }, [])
+
   const generate = async () => {
     if (!demandeId) {
-      setMemo(MOCK_MEMO)
+      setMemo(FALLBACK_MEMO)
       return
     }
     setGenerating(true)
@@ -29,10 +37,11 @@ export default function AIMemoPanel({ memo: memoProp, demandeId }) {
         const res = await generateMemo(demandeId)
         setMemo(res.data.memo)
       } else {
-        setMemo(memoProp || MOCK_MEMO)
+        setMemo(memoProp || FALLBACK_MEMO)
       }
-    } catch {
-      setMemo(memoProp || MOCK_MEMO)
+    } catch (err) {
+      toast.error(err.message || 'Génération du mémo impossible.')
+      setMemo(memoProp || FALLBACK_MEMO)
     } finally {
       setGenerating(false)
     }
@@ -49,20 +58,23 @@ export default function AIMemoPanel({ memo: memoProp, demandeId }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles size={18} style={{ color: '#D4AF37' }} />
-          <h2 className="font-display font-bold text-blanc">Mémo IA (RAG)</h2>
+          <h2 className="font-display font-bold text-blanc">Mémo IA</h2>
         </div>
-        {isAgent && demandeId && (
-          <span className="text-xs text-muted">POST /rag/memo/{demandeId}/</span>
+        {ragOnline !== null && (
+          <span className={`flex items-center gap-1 text-xs ${ragOnline ? 'text-success' : 'text-muted'}`}>
+            {ragOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
+            {ragOnline ? 'IA disponible' : 'IA hors-ligne'}
+          </span>
         )}
       </div>
 
       {!memo && !generating && (
         <div className="neu-inset rounded-xl p-6 flex flex-col items-center gap-4 text-center">
           <p className="text-muted text-sm">
-            {memoProp ? 'Explication du scoring disponible ci-dessous.' : 'Générez un mémo RAG (agent) ou soumettez une demande crédit.'}
+            {memoProp ? 'Explication du scoring disponible ci-dessous.' : 'Générez une explication IA ou soumettez une demande de crédit.'}
           </p>
-          <Button onClick={generate} icon={Sparkles}>
-            {isAgent && demandeId ? 'Générer via API RAG' : 'Afficher explication'}
+          <Button onClick={generate} icon={Sparkles} disabled={!ragOnline && isAgent}>
+            {isAgent && demandeId ? 'Générer le mémo' : 'Afficher explication'}
           </Button>
         </div>
       )}

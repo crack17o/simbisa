@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import Button from '@/components/atoms/Button'
@@ -7,25 +8,26 @@ import { listExceptions, resolveException } from '@/api/manager'
 
 export default function ManagerExceptions() {
   const [exceptions, setExceptions] = useState([])
-  const [error, setError] = useState('')
+  const [hasError, setHasError] = useState(false)
   const [busyId, setBusyId] = useState(null)
 
   const load = useCallback(() => {
+    setHasError(false)
     listExceptions()
       .then(res => setExceptions(res.data || []))
-      .catch(err => setError(err.message))
+      .catch(err => { toast.error(err.message); setHasError(true) })
   }, [])
 
   useEffect(() => { load() }, [load])
 
   const handleResolve = async (id, statut) => {
     setBusyId(id)
-    setError('')
     try {
       await resolveException(id, { statut, observation: '' })
+      toast.success(statut === 'approuvee' ? 'Exception accordée.' : 'Exception refusée.')
       load()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setBusyId(null)
     }
@@ -33,9 +35,8 @@ export default function ManagerExceptions() {
 
   return (
     <DashboardLayout title="Gestion des exceptions">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-4">
-        {exceptions.length === 0 && !error && (
+        {exceptions.length === 0 && !hasError && (
           <p className="text-sm text-muted">Aucune exception enregistrée.</p>
         )}
         {exceptions.map(ex => (

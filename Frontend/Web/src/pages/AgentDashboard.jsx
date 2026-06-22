@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import StatCard from '@/components/molecules/StatCard'
 import Badge from '@/components/atoms/Badge'
@@ -14,10 +15,11 @@ export default function AgentDashboard() {
   const navigate = useNavigate()
   const [stats, setStats] = useState(null)
   const [pending, setPending] = useState([])
-  const [error, setError] = useState('')
+  const [hasError, setHasError] = useState(false)
   const [busyId, setBusyId] = useState(null)
 
   const load = useCallback(() => {
+    setHasError(false)
     Promise.all([
       getDemandesStats(),
       listDemandes('statut=en_analyse'),
@@ -26,7 +28,7 @@ export default function AgentDashboard() {
         setStats(statsRes.data)
         setPending((listRes.data || []).slice(0, 5))
       })
-      .catch(err => setError(err.message))
+      .catch(err => { toast.error(err.message); setHasError(true) })
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -36,11 +38,12 @@ export default function AgentDashboard() {
     try {
       await submitDemandeDecision(demandeId, {
         decision,
-        motif: decision === 'approuve' ? 'Approbation agent dashboard' : 'Rejet agent dashboard',
+        motif: decision === 'approuve' ? 'Approbation agent' : 'Rejet agent',
       })
+      toast.success(decision === 'approuve' ? 'Demande approuvée.' : 'Demande rejetée.')
       load()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setBusyId(null)
     }
@@ -48,7 +51,6 @@ export default function AgentDashboard() {
 
   return (
     <DashboardLayout title="Espace agent de crédit">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Dossiers en attente" value={String(stats?.dossiers_en_attente ?? '—')} sub="À instruire" icon={Clock} accentColor="#F59E0B" />
@@ -60,7 +62,7 @@ export default function AgentDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 neu-flat p-6 flex flex-col gap-4">
             <h3 className="font-display font-bold text-blanc">Dossiers prioritaires</h3>
-            {pending.length === 0 && !error && (
+            {pending.length === 0 && !hasError && (
               <p className="text-sm text-muted">Aucun dossier en analyse.</p>
             )}
             <div className="flex flex-col gap-3">

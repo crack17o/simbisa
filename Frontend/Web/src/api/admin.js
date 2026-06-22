@@ -19,3 +19,17 @@ export function updateAdminUserCommune(userId, commune_kinshasa) {
     body: { commune_kinshasa },
   })
 }
+
+export function updateAdminUserRole(userId, role) {
+  return apiRequest(`/api/v1/admin/users/${userId}/`, {
+    method: 'PATCH',
+    body: { role },
+  })
+}
+
+export function updateAdminUserStatut(userId, statut) {
+  return apiRequest(`/api/v1/admin/users/${userId}/`, {
+    method: 'PATCH',
+    body: { statut },
+  })
+}

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Button from '@/components/atoms/Button'
 import { FileText, Download } from 'lucide-react'
@@ -6,27 +7,26 @@ import { listAuditReports, generateAuditReport } from '@/api/audit'
 
 export default function AuditReports() {
   const [reports, setReports] = useState([])
-  const [error, setError] = useState('')
   const [generating, setGenerating] = useState(false)
   const [lastGenerated, setLastGenerated] = useState(null)
 
   const load = useCallback(() => {
     listAuditReports()
       .then(res => setReports(res.data || []))
-      .catch(err => setError(err.message))
+      .catch(err => toast.error(err.message))
   }, [])
 
   useEffect(() => { load() }, [load])
 
   const generate = async () => {
     setGenerating(true)
-    setError('')
     try {
       const res = await generateAuditReport({ type: 'decisions_credit' })
       setLastGenerated(res.data)
+      toast.success(`Rapport ${res.data?.report_id || ''} généré.`)
       load()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setGenerating(false)
     }
@@ -44,17 +44,10 @@ export default function AuditReports() {
 
   return (
     <DashboardLayout title="Rapports d'audit">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-6">
         <Button icon={FileText} loading={generating} onClick={generate} className="self-start">
           Générer un nouveau rapport
         </Button>
-
-        {lastGenerated && (
-          <div className="neu-sm p-4 text-sm text-success">
-            Rapport {lastGenerated.report_id} généré — {lastGenerated.summary?.decisions_total ?? 0} décision(s).
-          </div>
-        )}
 
         <div className="flex flex-col gap-4">
           {reports.map(r => (

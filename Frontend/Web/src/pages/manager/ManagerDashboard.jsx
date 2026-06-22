@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import StatCard from '@/components/molecules/StatCard'
 import Badge from '@/components/atoms/Badge'
@@ -12,13 +13,14 @@ import { formatMoney } from '@/utils/apiHelpers'
 export default function ManagerDashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState(null)
-  const [error, setError] = useState('')
+  const [hasError, setHasError] = useState(false)
   const [busyId, setBusyId] = useState(null)
 
   const load = useCallback(() => {
+    setHasError(false)
     getManagerDashboard()
       .then(res => setData(res.data))
-      .catch(err => setError(err.message))
+      .catch(err => { toast.error(err.message); setHasError(true) })
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -30,9 +32,10 @@ export default function ManagerDashboard() {
         decision,
         motif: `Validation responsable : ${decision}`,
       })
+      toast.success(decision === 'approuve' ? 'Demande approuvée.' : 'Demande rejetée.')
       load()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setBusyId(null)
     }
@@ -42,7 +45,6 @@ export default function ManagerDashboard() {
 
   return (
     <DashboardLayout title="Supervision crédit">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Dossiers sensibles" value={String(data?.dossiers_sensibles ?? '—')} sub="En attente validation" icon={Shield} accentColor="#F59E0B" />
@@ -56,7 +58,7 @@ export default function ManagerDashboard() {
             <h3 className="font-display font-bold text-blanc">Approbations sensibles</h3>
             <Button variant="ghost" size="sm" onClick={() => navigate('/manager/exceptions')}>Exceptions →</Button>
           </div>
-          {dossiers.length === 0 && !error && (
+          {dossiers.length === 0 && !hasError && (
             <p className="text-sm text-muted">Aucun dossier sensible en attente.</p>
           )}
           {dossiers.map(d => (

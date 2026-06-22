@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import ProtectedRoute from '@/components/guards/ProtectedRoute'
 import GuestRoute from '@/components/guards/GuestRoute'
@@ -16,6 +17,8 @@ import ScoringDetail from '@/pages/ScoringDetail'
 import MyCredits from '@/pages/MyCredits'
 import Repayments from '@/pages/Repayments'
 import AIExplanations from '@/pages/AIExplanations'
+import Echeancier from '@/pages/Echeancier'
+import Wallets from '@/pages/Wallets'
 
 import AgentDashboard from '@/pages/AgentDashboard'
 import AgentRequests from '@/pages/agent/AgentRequests'
@@ -62,6 +65,8 @@ function AppRoutes() {
       <Route path="/my-credits" element={<ProtectedRoute roles={[ROLES.CLIENT]}><MyCredits /></ProtectedRoute>} />
       <Route path="/repayments" element={<ProtectedRoute roles={[ROLES.CLIENT]}><Repayments /></ProtectedRoute>} />
       <Route path="/ai-explanations" element={<ProtectedRoute roles={[ROLES.CLIENT]}><AIExplanations /></ProtectedRoute>} />
+      <Route path="/echeancier" element={<ProtectedRoute roles={[ROLES.CLIENT]}><Echeancier /></ProtectedRoute>} />
+      <Route path="/wallets" element={<ProtectedRoute roles={[ROLES.CLIENT]}><Wallets /></ProtectedRoute>} />
 
       {/* Scoring — Client, Agent, Manager, Analyste */}
       <Route path="/scoring" element={
@@ -118,6 +123,22 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppRoutes />
+        <Toaster
+          position="bottom-right"
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: '#1e1e1e',
+              color: '#f8f6f0',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '14px',
+              fontSize: '13px',
+            },
+            success: { style: { borderLeft: '3px solid #22c55e' } },
+            error:   { style: { borderLeft: '3px solid #ef4444' } },
+            info:    { style: { borderLeft: '3px solid #D4AF37' } },
+          }}
+        />
       </AuthProvider>
     </BrowserRouter>
   )

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { UserPlus, Users, FileCheck, Pencil } from 'lucide-react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import FormField from '@/components/molecules/FormField'
 import Button from '@/components/atoms/Button'
@@ -22,8 +23,6 @@ export default function AgentClients() {
   const { user } = useAuth()
   const isAgent = user?.role === ROLES.AGENT
   const [clients, setClients] = useState([])
-  const [error, setError] = useState('')
-  const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -38,7 +37,7 @@ export default function AgentClients() {
     setLoading(true)
     listClients()
       .then(res => setClients(Array.isArray(res.data) ? res.data : res.results || []))
-      .catch(err => setError(err.message))
+      .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
   }
 
@@ -47,16 +46,14 @@ export default function AgentClients() {
   const handleCreate = async (e) => {
     e.preventDefault()
     setCreating(true)
-    setError('')
-    setMsg('')
     try {
       await createClientByAgent(form)
-      setMsg('Client enregistré dans votre portefeuille.')
+      toast.success('Client enregistré dans votre portefeuille.')
       setForm({ telephone: '', prenom: '', nom: '', postnom: '', email: '', password: '', profession: '', adresse: '' })
       setShowForm(false)
       loadClients()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setCreating(false)
     }
@@ -78,14 +75,13 @@ export default function AgentClients() {
   const handleUpdate = async (e) => {
     e.preventDefault()
     setSaving(true)
-    setError('')
     try {
       await updateClientByAgent(editId, editForm)
-      setMsg('Client mis à jour.')
+      toast.success('Client mis à jour.')
       setEditId(null)
       loadClients()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setSaving(false)
     }
@@ -97,10 +93,10 @@ export default function AgentClients() {
       : ''
     try {
       await verifyKyc(identiteId, { statut, rejection_reason })
-      setMsg(`KYC ${statut} pour ${client.utilisateur?.full_name || 'client'}.`)
+      toast.success(`KYC ${statut} pour ${client.utilisateur?.full_name || 'client'}.`)
       loadClients()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     }
   }
 
@@ -112,9 +108,6 @@ export default function AgentClients() {
 
   return (
     <DashboardLayout title={isAgent ? 'Mes clients' : 'Tous les clients'}>
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
-      {msg && <p className="text-sm text-success mb-4">{msg}</p>}
-
       <div className="flex flex-col gap-6">
         {isAgent && (
           <div className="flex justify-end">

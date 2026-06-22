@@ -45,9 +45,12 @@ def admin_update_user_view(request, user_id):
             status=status.HTTP_404_NOT_FOUND,
         )
 
+    updated_fields = ['updated_at']
+
     commune = request.data.get('commune_kinshasa')
     if commune is not None:
-        if user.role and user.role.nom_role != 'Agent de crédit':
+        role_nom = user.role.nom_role if user.role else ''
+        if role_nom != 'Agent de crédit':
             return Response(
                 {'success': False, 'error': {'message': 'Seuls les agents de crédit ont une commune.'}},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -58,7 +61,33 @@ def admin_update_user_view(request, user_id):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user.commune_kinshasa = commune
-        user.save(update_fields=['commune_kinshasa', 'updated_at'])
+        updated_fields.append('commune_kinshasa')
+
+    new_role = request.data.get('role')
+    if new_role is not None:
+        try:
+            role_obj = Role.objects.get(nom_role=new_role)
+        except Role.DoesNotExist:
+            valid = list(Role.objects.values_list('nom_role', flat=True))
+            return Response(
+                {'success': False, 'error': {'message': f'Rôle invalide. Valeurs acceptées : {valid}'}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.role = role_obj
+        updated_fields.append('role')
+
+    new_statut = request.data.get('statut')
+    if new_statut is not None:
+        valid_statuts = [s[0] for s in Utilisateur.STATUTS]
+        if new_statut not in valid_statuts:
+            return Response(
+                {'success': False, 'error': {'message': f'Statut invalide. Valeurs acceptées : {valid_statuts}'}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.statut = new_statut
+        updated_fields.append('statut')
+
+    user.save(update_fields=updated_fields)
 
     return Response({
         'success': True,

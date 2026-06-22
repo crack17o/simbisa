@@ -10,4 +10,5 @@ class AppRoutes {
   static const scoring      = '/scoring';
   static const aiExplain    = '/ai-explanations';
   static const onboarding   = '/onboarding';
+  static const echeancier   = '/echeancier';
 }

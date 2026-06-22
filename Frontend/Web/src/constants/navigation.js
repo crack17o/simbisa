@@ -1,7 +1,8 @@
 import {
   LayoutDashboard, CreditCard, PiggyBank, BarChart3, ShieldCheck,
   User, FileCheck, Wallet, Sparkles, ClipboardList, Eye, AlertTriangle,
-  Sliders, Users, Settings, Shield, FileText, Activity, Lock, UserCog,
+  Sliders, Users, Settings, Shield, FileText, Activity, Lock, UserCog, CalendarDays,
+  Smartphone,
 } from 'lucide-react'
 import { ROLES } from '@/constants/roles'
 
@@ -10,9 +11,11 @@ export const NAV_BY_ROLE = {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
     { to: '/profile', icon: User, label: 'Mon profil & KYC' },
     { to: '/savings', icon: PiggyBank, label: 'Épargne virtuelle' },
+    { to: '/wallets', icon: Smartphone, label: 'Mobile Money' },
     { to: '/credit-request', icon: CreditCard, label: 'Demande de crédit' },
     { to: '/my-credits', icon: ShieldCheck, label: 'Mes crédits' },
     { to: '/repayments', icon: Wallet, label: 'Remboursements' },
+    { to: '/echeancier', icon: CalendarDays, label: 'Échéancier' },
     { to: '/scoring', icon: BarChart3, label: 'Mon score' },
     { to: '/ai-explanations', icon: Sparkles, label: 'Explications IA' },
   ],

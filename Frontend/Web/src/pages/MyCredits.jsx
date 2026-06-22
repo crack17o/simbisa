@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { CreditCard } from 'lucide-react'
+import { CreditCard, CalendarDays } from 'lucide-react'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import Button from '@/components/atoms/Button'
@@ -41,9 +41,19 @@ export default function MyCredits() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <span className="text-xl font-display font-bold text-blanc">{formatMoney(c.montant_demande, c.devise)}</span>
                 <Badge label={mapDecisionLabel(c.statut)} />
+                {c.credit && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={CalendarDays}
+                    onClick={() => navigate(`/echeancier?credit_id=${c.credit.id}`)}
+                  >
+                    Échéancier
+                  </Button>
+                )}
               </div>
             </div>
           ))}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Mail, Shield, Lock, CheckCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import AuthLayout from '@/components/templates/AuthLayout'
 import FormField from '@/components/molecules/FormField'
 import Button from '@/components/atoms/Button'
@@ -20,28 +21,19 @@ export default function ForgotPassword() {
   const [resetToken, setResetToken] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [info, setInfo] = useState('')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault()
-    if (!email.trim()) {
-      setError('Saisissez votre adresse e-mail.')
-      return
-    }
-    setError('')
-    setInfo('')
+    if (!email.trim()) { toast.error('Saisissez votre adresse e-mail.'); return }
     setLoading(true)
     try {
       const res = await forgotPasswordApi(email.trim())
-      setInfo(res.message)
-      if (res.data?.otp_sent_to) {
-        setInfo(`${res.message} (${res.data.otp_sent_to})`)
-      }
+      const dest = res.data?.otp_sent_to
+      toast.info(dest ? `Code envoyé à ${dest}` : res.message)
       setStep('otp')
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setLoading(false)
     }
@@ -49,19 +41,14 @@ export default function ForgotPassword() {
 
   const handleOtpSubmit = async (e) => {
     e.preventDefault()
-    if (otpCode.length !== 6) {
-      setError('Code à 6 chiffres requis.')
-      return
-    }
-    setError('')
+    if (otpCode.length !== 6) { toast.error('Code à 6 chiffres requis.'); return }
     setLoading(true)
     try {
       const res = await verifyResetOtpApi(email.trim(), otpCode)
       setResetToken(res.data.reset_token)
       setStep('password')
-      setInfo(res.message)
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setLoading(false)
     }
@@ -69,27 +56,14 @@ export default function ForgotPassword() {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault()
-    if (password.length < 8) {
-      setError('Minimum 8 caractères.')
-      return
-    }
-    if (password !== passwordConfirm) {
-      setError('Les mots de passe ne correspondent pas.')
-      return
-    }
-    setError('')
+    if (password.length < 8) { toast.error('Minimum 8 caractères.'); return }
+    if (password !== passwordConfirm) { toast.error('Les mots de passe ne correspondent pas.'); return }
     setLoading(true)
     try {
-      const res = await resetPasswordApi({
-        email: email.trim(),
-        reset_token: resetToken,
-        new_password: password,
-        new_password_confirm: passwordConfirm,
-      })
-      setInfo(res.message)
+      await resetPasswordApi({ email: email.trim(), reset_token: resetToken, new_password: password, new_password_confirm: passwordConfirm })
       setStep('done')
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setLoading(false)
     }
@@ -113,21 +87,9 @@ export default function ForgotPassword() {
 
         <div className="flex gap-2">
           {STEPS.slice(0, 3).map((s, i) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                STEPS.indexOf(step) >= i ? 'bg-or' : 'bg-white/10'
-              }`}
-            />
+            <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${STEPS.indexOf(step) >= i ? 'bg-or' : 'bg-white/10'}`} />
           ))}
         </div>
-
-        {info && step !== 'done' && (
-          <div className="bg-or/10 border border-or/20 rounded-xl px-4 py-3 text-sm text-or-light">{info}</div>
-        )}
-        {error && (
-          <div className="bg-danger/10 border border-danger/20 rounded-xl px-4 py-3 text-sm text-danger">{error}</div>
-        )}
 
         {step === 'email' && (
           <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
@@ -153,7 +115,6 @@ export default function ForgotPassword() {
               placeholder="000000"
               value={otpCode}
               onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              hint="Vérifiez la console backend en développement"
             />
             <Button type="submit" size="xl" loading={loading}>Valider le code</Button>
             <Button type="button" variant="ghost" onClick={() => setStep('email')}>← Changer l&apos;e-mail</Button>
@@ -162,20 +123,10 @@ export default function ForgotPassword() {
 
         {step === 'password' && (
           <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
-            <FormField
-              label="Nouveau mot de passe"
-              type="password"
-              icon={Lock}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-            <FormField
-              label="Confirmer le mot de passe"
-              type="password"
-              icon={Lock}
-              value={passwordConfirm}
-              onChange={e => setPasswordConfirm(e.target.value)}
-            />
+            <FormField label="Nouveau mot de passe" type="password" icon={Lock} value={password}
+              onChange={e => setPassword(e.target.value)} />
+            <FormField label="Confirmer le mot de passe" type="password" icon={Lock} value={passwordConfirm}
+              onChange={e => setPasswordConfirm(e.target.value)} />
             <Button type="submit" size="xl" loading={loading}>Enregistrer</Button>
           </form>
         )}
@@ -183,7 +134,7 @@ export default function ForgotPassword() {
         {step === 'done' && (
           <div className="flex flex-col gap-4 items-center text-center py-4">
             <CheckCircle size={48} className="text-success" />
-            <p className="text-blanc font-semibold">{info}</p>
+            <p className="text-blanc font-semibold">Mot de passe réinitialisé avec succès.</p>
             <Button size="xl" onClick={() => navigate('/login', { state: { passwordReset: true } })}>
               Se connecter
             </Button>

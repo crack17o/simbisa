@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:simbisa/core/constants/api_config.dart';
 import 'package:simbisa/core/constants/routes.dart';
 import 'package:simbisa/core/services/api_client.dart';
 import 'package:simbisa/core/services/auth_service.dart';
 import 'package:simbisa/core/theme/app_theme.dart';
 import 'package:simbisa/core/theme/widgets.dart';
 import 'package:simbisa/core/utils/mobile_money_operator.dart';
+import 'package:simbisa/core/utils/toast.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -26,7 +26,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _loading = false;
   bool _loadingCommunes = true;
-  String? _error;
   String? _selectedCommune;
   String? _mmHint;
   List<CommuneOption> _communes = [];
@@ -41,7 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final normalized = AuthService.normalizePhone(raw);
       final op = MobileMoneyOperator.fromPhone(normalized);
       setState(() => _mmHint = op != null
-          ? 'Mobile Money : ${op.label} · ${op.serviceName} (numéro analysé pour le scoring)'
+          ? 'Mobile Money : ${op.label} · ${op.serviceName}'
           : 'Préfixe non reconnu — vérifiez le numéro RDC');
     } catch (_) {
       setState(() => _mmHint = null);
@@ -65,10 +64,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _loadingCommunes = false;
-        _error = 'Impossible de charger les communes. Vérifiez le backend.';
-      });
+      setState(() => _loadingCommunes = false);
+      showToastError(context, 'Impossible de charger les communes.');
     }
   }
 
@@ -85,32 +82,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (_phoneCtrl.text.isEmpty || _prenomCtrl.text.isEmpty || _nomCtrl.text.isEmpty) {
-      setState(() => _error = 'Veuillez remplir tous les champs requis.');
+      showToastError(context, 'Veuillez remplir tous les champs requis.');
       return;
     }
     if (_selectedCommune == null) {
-      setState(() => _error = 'Sélectionnez votre commune de résidence.');
+      showToastError(context, 'Sélectionnez votre commune de résidence.');
       return;
     }
     if (_pwdCtrl.text.length < 8) {
-      setState(() => _error = 'Mot de passe minimum : 8 caractères.');
+      showToastError(context, 'Mot de passe minimum : 8 caractères.');
       return;
     }
     if (_pwdCtrl.text != _pwd2Ctrl.text) {
-      setState(() => _error = 'Les mots de passe ne correspondent pas.');
+      showToastError(context, 'Les mots de passe ne correspondent pas.');
       return;
     }
 
     final email = _emailCtrl.text.trim();
     if (email.isNotEmpty && !email.contains('@')) {
-      setState(() => _error = 'Adresse e-mail invalide.');
+      showToastError(context, 'Adresse e-mail invalide.');
       return;
     }
 
-    setState(() {
-      _error = null;
-      _loading = true;
-    });
+    setState(() => _loading = true);
 
     try {
       final result = await _auth.register(
@@ -123,18 +117,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       if (result.welcomeEmailSent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Compte créé. Un e-mail de bienvenue a été envoyé à $email.'),
-            backgroundColor: SimbisaColors.panel,
-          ),
-        );
+        showToastSuccess(context, 'Compte créé. E-mail de bienvenue envoyé à $email.');
       }
       context.go(AppRoutes.dashboard);
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
-    } catch (e) {
-      setState(() => _error = 'Inscription impossible. Backend : ${ApiConfig.host}');
+      if (mounted) showToastError(context, e.message);
+    } catch (_) {
+      if (mounted) showToastError(context, 'Inscription impossible. Vérifiez votre connexion.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -156,19 +145,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 6),
                 Text('Rôle Client · Simbisa Rawbank', style: SimbisaText.body(13, color: SimbisaColors.muted)),
                 const SizedBox(height: 20),
-
-                if (_error != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: SimbisaColors.danger.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: SimbisaColors.danger.withOpacity(0.2)),
-                    ),
-                    child: Text(_error!, style: SimbisaText.body(13, color: SimbisaColors.danger)),
-                  ),
-                  const SizedBox(height: 16),
-                ],
 
                 NeuTextField(
                   label: 'Téléphone (+243)',

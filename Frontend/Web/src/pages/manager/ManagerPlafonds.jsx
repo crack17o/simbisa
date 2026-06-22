@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Button from '@/components/atoms/Button'
 import { getPlafonds, updatePlafonds } from '@/api/manager'
@@ -12,20 +13,16 @@ const FIELDS = [
 
 export default function ManagerPlafonds() {
   const [values, setValues] = useState({})
-  const [error, setError] = useState('')
-  const [msg, setMsg] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     getPlafonds()
       .then(res => setValues(res.data || {}))
-      .catch(err => setError(err.message))
+      .catch(err => toast.error(err.message))
   }, [])
 
   const handleSave = async () => {
     setSaving(true)
-    setError('')
-    setMsg('')
     try {
       const res = await updatePlafonds({
         usd_credit_min: values.usd_credit_min,
@@ -34,9 +31,9 @@ export default function ManagerPlafonds() {
         usd_manager_max: values.usd_manager_max,
       })
       setValues(res.data)
-      setMsg(res.message || 'Plafonds enregistrés.')
+      toast.success(res.message || 'Plafonds enregistrés.')
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setSaving(false)
     }
@@ -46,8 +43,6 @@ export default function ManagerPlafonds() {
     <DashboardLayout title="Plafonds de crédit">
       <div className="max-w-xl flex flex-col gap-4">
         <p className="text-sm text-muted">Modifiez les plafonds opérationnels. Les changements sont journalisés.</p>
-        {error && <p className="text-sm text-danger">{error}</p>}
-        {msg && <p className="text-sm text-success">{msg}</p>}
         {FIELDS.map(({ key, label, unit }) => (
           <div key={key} className="neu-flat p-4 flex items-center justify-between gap-4">
             <span className="text-sm text-blanc">{label}</span>

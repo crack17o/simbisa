@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Button from '@/components/atoms/Button'
 import { getRiskRules, updateRiskRules } from '@/api/risk'
 
 export default function RiskRules() {
   const [rules, setRules] = useState([])
-  const [error, setError] = useState('')
-  const [msg, setMsg] = useState('')
+  const [hasError, setHasError] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     getRiskRules()
       .then(res => setRules(res.data || []))
-      .catch(err => setError(err.message))
+      .catch(err => { toast.error(err.message); setHasError(true) })
   }, [])
 
   const toggle = (code) => {
@@ -21,16 +21,14 @@ export default function RiskRules() {
 
   const handleSave = async () => {
     setSaving(true)
-    setError('')
-    setMsg('')
     try {
       const res = await updateRiskRules(
         rules.map(r => ({ code: r.code, is_active: r.active }))
       )
       setRules(res.data || [])
-      setMsg(res.message || 'Règles enregistrées.')
+      toast.success(res.message || 'Règles enregistrées.')
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setSaving(false)
     }
@@ -40,10 +38,8 @@ export default function RiskRules() {
     <DashboardLayout title="Règles métier">
       <div className="flex flex-col gap-4 max-w-2xl">
         <p className="text-sm text-muted">Règles éliminatoires du moteur « Règles » — toute violation entraîne un rejet automatique.</p>
-        {error && <p className="text-sm text-danger">{error}</p>}
-        {msg && <p className="text-sm text-success">{msg}</p>}
-        {rules.length === 0 && !error && (
-          <p className="text-sm text-muted">Aucune règle — lancez <code>seed_demo</code> côté backend.</p>
+        {rules.length === 0 && !hasError && (
+          <p className="text-sm text-muted">Aucune règle métier configurée.</p>
         )}
         {rules.map(r => (
           <div key={r.code} className="neu-flat p-5 flex items-center justify-between gap-4">

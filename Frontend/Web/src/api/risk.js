@@ -15,3 +15,7 @@ export function updateRiskRules(rules) {
 export function getRiskModels() {
   return apiRequest('/api/v1/risk/models/')
 }
+
+export function getRiskModelStatus() {
+  return apiRequest('/api/v1/risk/model-status/')
+}

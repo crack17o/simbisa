@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import StatCard from '@/components/molecules/StatCard'
 import { TrendingDown, Target, Activity, AlertTriangle } from 'lucide-react'
@@ -9,17 +10,15 @@ import { getRiskDashboard } from '@/api/risk'
 export default function RiskDashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState(null)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     getRiskDashboard()
       .then(res => setData(res.data))
-      .catch(err => setError(err.message))
+      .catch(err => toast.error(err.message))
   }, [])
 
   return (
     <DashboardLayout title="Gestion du risque">
-      {error && <p className="text-sm text-danger mb-4">{error}</p>}
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Taux de défaut" value={data ? `${data.taux_defaut_pct}%` : '—'} sub="Portefeuille" icon={TrendingDown} accentColor="#EF4444" />

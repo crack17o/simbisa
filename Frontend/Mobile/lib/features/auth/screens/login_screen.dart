@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simbisa/core/constants/routes.dart';
-import 'package:simbisa/core/constants/api_config.dart';
 import 'package:simbisa/core/services/api_client.dart';
 import 'package:simbisa/core/services/auth_service.dart';
 import 'package:simbisa/core/theme/app_theme.dart';
 import 'package:simbisa/core/theme/widgets.dart';
+import 'package:simbisa/core/utils/toast.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final _pwdCtrl   = TextEditingController();
   bool _showPwd  = false;
   bool _loading  = false;
-  String? _error;
 
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
@@ -42,10 +41,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Future<void> _login() async {
     if (_phoneCtrl.text.isEmpty || _pwdCtrl.text.isEmpty) {
-      setState(() => _error = 'Veuillez remplir tous les champs.');
+      showToastError(context, 'Veuillez remplir tous les champs.');
       return;
     }
-    setState(() { _error = null; _loading = true; });
+    setState(() => _loading = true);
     try {
       await AuthService().login(
         telephone: _phoneCtrl.text.trim(),
@@ -53,9 +52,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       );
       if (mounted) context.go(AppRoutes.dashboard);
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
-    } catch (e) {
-      setState(() => _error = 'Connexion impossible. Vérifiez le backend (${ApiConfig.host}).');
+      if (mounted) showToastError(context, e.message);
+    } catch (_) {
+      if (mounted) showToastError(context, 'Connexion impossible. Vérifiez votre connexion.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -127,10 +126,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget _buildHero() {
     return Column(
       children: [
-        Text(
+        const Text(
           "L'inclusion financière\ncommence ici.",
           textAlign: TextAlign.center,
-          style: const TextStyle(fontFamily: 'Sora', fontSize: 26, fontWeight: FontWeight.w800, color: SimbisaColors.blanc, height: 1.25),
+          style: TextStyle(fontFamily: 'Sora', fontSize: 26, fontWeight: FontWeight.w800, color: SimbisaColors.blanc, height: 1.25),
         ),
         const SizedBox(height: 12),
         Text(
@@ -151,19 +150,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           const SizedBox(height: 4),
           Text('Numéro illicocash + mot de passe', style: SimbisaText.body(13, color: SimbisaColors.muted)),
           const SizedBox(height: 24),
-
-          if (_error != null) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: SimbisaColors.danger.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: SimbisaColors.danger.withOpacity(0.2)),
-              ),
-              child: Text(_error!, style: SimbisaText.body(13, color: SimbisaColors.danger)),
-            ),
-            const SizedBox(height: 16),
-          ],
 
           NeuTextField(
             label: 'Numéro de téléphone',
@@ -244,8 +230,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       );
       if (i != stats.length - 1) children.add(const SizedBox(width: 12));
     }
-    return Row(
-      children: children,
-    );
+    return Row(children: children);
   }
 }

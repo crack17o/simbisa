@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import CreditRequestForm from '@/components/organisms/CreditRequestForm'
 import CreditDecisionBanner from '@/components/molecules/CreditDecisionBanner'
@@ -10,11 +11,9 @@ import { poll } from '@/utils/apiHelpers'
 export default function CreditRequest() {
   const [decision, setDecision] = useState(null)
   const [scoreData, setScoreData] = useState(null)
-  const [error, setError] = useState('')
   const [polling, setPolling] = useState(false)
 
   const handleSubmit = async (form) => {
-    setError('')
     setDecision(null)
     setPolling(true)
     try {
@@ -40,14 +39,14 @@ export default function CreditRequest() {
       } else {
         setDecision({
           decision: 'en_analyse',
-          motif: 'Demande enregistrée — scoring en cours (Celery).',
-          explication: 'Consultez /scoring dans quelques instants.',
+          motif: 'Demande enregistrée — analyse en cours.',
+          explication: 'Résultats disponibles sous peu dans votre espace scoring.',
           montant: form.montant,
           duree: form.duree,
         })
       }
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message)
     } finally {
       setPolling(false)
     }
@@ -63,14 +62,11 @@ export default function CreditRequest() {
 
   return (
     <DashboardLayout title="Demande de crédit">
-      {error && (
-        <div className="mb-4 bg-danger/10 border border-danger/20 rounded-xl px-4 py-3 text-sm text-danger">{error}</div>
-      )}
-      {polling && <p className="mb-4 text-sm text-muted">Analyse scoring en cours…</p>}
+      {polling && <p className="mb-4 text-sm text-muted">Analyse en cours…</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="flex flex-col gap-6">
-          <CreditRequestForm onSubmit={handleSubmit} onError={setError} />
+          <CreditRequestForm onSubmit={handleSubmit} onError={msg => toast.error(msg)} />
           {decision && <CreditDecisionBanner {...decision} />}
         </div>
 

@@ -101,4 +101,9 @@ class CreditService {
       },
     );
   }
+
+  Future<Map<String, dynamic>> fetchEcheances(int creditId) async {
+    final res = await _api.get('credits/$creditId/echeances/');
+    return res['data'] as Map<String, dynamic>;
+  }
 }
