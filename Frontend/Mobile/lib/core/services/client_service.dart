@@ -26,4 +26,19 @@ class ClientService {
     final data = (res['data'] as Map<String, dynamic>?) ?? res;
     return ClientProfile.fromJson(data);
   }
+
+  Future<void> submitKyc({
+    required String typePiece,
+    required String numeroPiece,
+    required String dateExpiration,
+  }) async {
+    await _api.postMultipart(
+      'clients/me/identite/',
+      fields: {
+        'type_piece': typePiece,
+        'numero_piece': numeroPiece,
+        'date_expiration': dateExpiration,
+      },
+    );
+  }
 }

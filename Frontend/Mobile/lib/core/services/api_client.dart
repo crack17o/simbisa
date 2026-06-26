@@ -41,6 +41,44 @@ class ApiClient {
     return _request('PATCH', path, body: body, auth: auth);
   }
 
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    required Map<String, String> fields,
+    List<int>? fileBytes,
+    String? fileFieldName,
+    String? fileName,
+    bool auth = true,
+  }) async {
+    final uri = ApiConfig.uri(path);
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['X-Device-Id'] = 'simbisa-mobile';
+    if (auth) {
+      final token = await _storage.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+    }
+    request.fields.addAll(fields);
+    if (fileBytes != null && fileFieldName != null && fileName != null) {
+      request.files.add(http.MultipartFile.fromBytes(fileFieldName, fileBytes, filename: fileName));
+    }
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    Map<String, dynamic>? decoded;
+    if (response.body.isNotEmpty) {
+      decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return decoded ?? {'success': true};
+    }
+    final error = decoded?['error'];
+    final message = error is Map
+        ? (error['message'] as String? ?? 'Erreur API')
+        : 'Erreur API (${response.statusCode})';
+    final code = error is Map ? error['code'] as String? : null;
+    throw ApiException(message, statusCode: response.statusCode, code: code);
+  }
+
   Future<Map<String, dynamic>> _request(
     String method,
     String path, {

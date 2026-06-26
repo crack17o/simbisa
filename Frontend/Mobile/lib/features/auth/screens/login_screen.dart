@@ -17,8 +17,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _phoneCtrl = TextEditingController();
   final _pwdCtrl   = TextEditingController();
-  bool _showPwd  = false;
-  bool _loading  = false;
+  final _otpCtrl  = TextEditingController();
+  bool _showPwd   = false;
+  bool _loading   = false;
+  bool _needsOtp  = false;
 
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
@@ -36,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _fadeCtrl.dispose();
     _phoneCtrl.dispose();
     _pwdCtrl.dispose();
+    _otpCtrl.dispose();
     super.dispose();
   }
 
@@ -44,15 +47,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       showToastError(context, 'Veuillez remplir tous les champs.');
       return;
     }
+    if (_needsOtp && _otpCtrl.text.length != 6) {
+      showToastError(context, 'Code OTP à 6 chiffres requis.');
+      return;
+    }
     setState(() => _loading = true);
     try {
       await AuthService().login(
         telephone: _phoneCtrl.text.trim(),
         password: _pwdCtrl.text,
+        otpCode: _needsOtp ? _otpCtrl.text.trim() : null,
       );
       if (mounted) context.go(AppRoutes.dashboard);
     } on ApiException catch (e) {
-      if (mounted) showToastError(context, e.message);
+      if (e.code == 'otp_required') {
+        if (mounted) {
+          setState(() => _needsOtp = true);
+          showToast(context, e.message);
+        }
+      } else {
+        if (mounted) showToastError(context, e.message);
+      }
     } catch (_) {
       if (mounted) showToastError(context, 'Connexion impossible. Vérifiez votre connexion.');
     } finally {
@@ -170,10 +185,21 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               onPressed: () => setState(() => _showPwd = !_showPwd),
             ),
           ),
+          if (_needsOtp) ...[
+            const SizedBox(height: 16),
+            NeuTextField(
+              label: 'Code OTP (e-mail)',
+              hint: '000000',
+              prefixIcon: const Icon(Icons.shield_outlined),
+              controller: _otpCtrl,
+              keyboardType: TextInputType.number,
+            ),
+          ],
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
             child: GestureDetector(
+              onTap: () => context.go(AppRoutes.forgotPassword),
               child: Text('Mot de passe oublié ?', style: SimbisaText.body(12, color: SimbisaColors.or)),
             ),
           ),

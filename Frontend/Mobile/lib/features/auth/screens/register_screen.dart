@@ -119,6 +119,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (result.welcomeEmailSent) {
         showToastSuccess(context, 'Compte créé. E-mail de bienvenue envoyé à $email.');
       }
+      if (result.agentAssigne != null) {
+        showToast(context, 'Agent assigné : ${result.agentAssigne!.fullName} · ${result.agentAssigne!.telephone}');
+      }
       context.go(AppRoutes.dashboard);
     } on ApiException catch (e) {
       if (mounted) showToastError(context, e.message);
@@ -205,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         decoration: BoxDecoration(
                           color: SimbisaColors.panel,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withOpacity(0.08)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(

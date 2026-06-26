@@ -96,9 +96,16 @@ class AuthService {
     final user = SessionUser.fromJson(data['user'] as Map<String, dynamic>);
     await _storage.saveSession(user);
     Session.current = user;
+    final agentData = data['agent_assigne'] as Map<String, dynamic>?;
     return RegisterResult(
       user: user,
       welcomeEmailSent: data['welcome_email_sent'] == true,
+      agentAssigne: agentData != null
+          ? AgentInfo(
+              fullName: agentData['full_name'] as String? ?? '',
+              telephone: agentData['telephone'] as String? ?? '',
+            )
+          : null,
     );
   }
 
@@ -118,12 +125,55 @@ class AuthService {
     if (refresh != null) {
       try {
         await _api.post('auth/logout/', body: {'refresh': refresh}, auth: true);
-      } catch (_) {
-        // Ignore — on efface la session locale quand même.
-      }
+      } catch (_) {}
     }
     await _storage.clear();
     Session.current = null;
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await _api.post('auth/password/forgot/', body: {'email': email.trim()}, auth: false);
+  }
+
+  Future<String> verifyResetOtp(String email, String otpCode) async {
+    final res = await _api.post('auth/password/verify-otp/', body: {
+      'email': email.trim(),
+      'otp_code': otpCode,
+    }, auth: false);
+    return (res['data']?['reset_token'] as String?) ?? '';
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    await _api.post('auth/password/reset/', body: {
+      'email': email.trim(),
+      'reset_token': resetToken,
+      'new_password': newPassword,
+      'new_password_confirm': newPassword,
+    }, auth: false);
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    await _api.post('auth/change-password/', body: {
+      'old_password': oldPassword,
+      'new_password': newPassword,
+      'new_password_confirm': newPassword,
+    });
+  }
+
+  Future<String> mfaSetup() async {
+    final res = await _api.post('auth/mfa/setup/', body: {});
+    return (res['data']?['otp_sent_to'] as String?) ?? 'votre e-mail';
+  }
+
+  Future<void> mfaVerify(String otpToken) async {
+    await _api.post('auth/mfa/verify/', body: {'otp_token': otpToken});
   }
 
   Future<SessionUser?> restoreSession() async {
@@ -152,9 +202,20 @@ class CommuneOption {
   final String label;
 }
 
+class AgentInfo {
+  const AgentInfo({required this.fullName, required this.telephone});
+  final String fullName;
+  final String telephone;
+}
+
 class RegisterResult {
-  const RegisterResult({required this.user, required this.welcomeEmailSent});
+  const RegisterResult({
+    required this.user,
+    required this.welcomeEmailSent,
+    this.agentAssigne,
+  });
 
   final SessionUser user;
   final bool welcomeEmailSent;
+  final AgentInfo? agentAssigne;
 }

@@ -4,10 +4,10 @@ import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import ScoringPanel from '@/components/organisms/ScoringPanel'
 import Button from '@/components/atoms/Button'
-import { BarChart2, Info, Search } from 'lucide-react'
+import { BarChart2, Info, Search, RefreshCw } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { ROLES } from '@/constants/roles'
-import { getMyScore, getScoringDetail } from '@/api/scoring'
+import { getMyScore, getScoringDetail, triggerScoring } from '@/api/scoring'
 
 export default function ScoringDetail() {
   const { user } = useAuth()
@@ -17,6 +17,20 @@ export default function ScoringDetail() {
   const [data, setData] = useState(null)
   const [demandeId, setDemandeId] = useState(searchParams.get('demande_id') || '')
   const [loading, setLoading] = useState(false)
+  const [triggering, setTriggering] = useState(false)
+
+  const handleTrigger = async () => {
+    if (!demandeId) { toast.error('Saisissez un ID de demande.'); return }
+    setTriggering(true)
+    try {
+      await triggerScoring(demandeId)
+      toast.success('Scoring relancé — rechargez dans quelques secondes.')
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setTriggering(false)
+    }
+  }
 
   const loadDemande = useCallback(async (id) => {
     if (!id) return
@@ -88,6 +102,9 @@ export default function ScoringDetail() {
           </div>
           <Button icon={Search} loading={loading} onClick={() => loadDemande(demandeId)}>
             Charger
+          </Button>
+          <Button icon={RefreshCw} variant="secondary" loading={triggering} onClick={handleTrigger}>
+            Relancer scoring
           </Button>
         </div>
       )}
