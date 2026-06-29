@@ -41,7 +41,7 @@ export function setStoredAuth(user) {
   else localStorage.removeItem(STORAGE_KEY)
 }
 
-async function refreshAccessToken(refreshToken) {
+export async function refreshAccessToken(refreshToken) {
   const res = await fetch(`${API_BASE}/api/v1/auth/token/refresh/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
