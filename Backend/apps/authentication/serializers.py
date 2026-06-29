@@ -2,6 +2,7 @@ import logging
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from apps.core.kinshasa_communes import KINSHASA_COMMUNES
+from apps.core.phone import normalize_telephone, local_variant, is_valid_telephone
 from .models import Utilisateur, Role
 
 logger = logging.getLogger('apps.authentication')
@@ -31,10 +32,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
 
     def validate_telephone(self, value):
-        cleaned = value.replace(' ', '').replace('-', '')
-        if not (cleaned.startswith('+243') or cleaned.startswith('243')):
-            raise serializers.ValidationError("Numéro DRC requis (format : +243XXXXXXXXX)")
-        return cleaned
+        normalized = normalize_telephone(value)
+        if not is_valid_telephone(normalized):
+            raise serializers.ValidationError("Numéro DRC requis (format : +243XXXXXXXXX ou 0XXXXXXXXX)")
+        if Utilisateur.objects.filter(telephone__in=[normalized, local_variant(normalized)]).exists():
+            raise serializers.ValidationError('Ce numéro est déjà utilisé.')
+        return normalized
 
     def validate(self, data):
         if data['password'] != data['password_confirm']:
@@ -57,12 +60,13 @@ class LoginSerializer(serializers.Serializer):
     mfa_token = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
-        telephone = data.get('telephone', '').replace(' ', '')
+        raw_telephone = data.get('telephone', '')
+        normalized = normalize_telephone(raw_telephone)
         password = data.get('password')
 
-        try:
-            user = Utilisateur.objects.get(telephone=telephone)
-        except Utilisateur.DoesNotExist:
+        candidates = [normalized, local_variant(normalized)] if is_valid_telephone(normalized) else [raw_telephone.replace(' ', '')]
+        user = Utilisateur.objects.filter(telephone__in=candidates).first()
+        if not user:
             raise serializers.ValidationError({'telephone': 'Identifiants incorrects.'})
 
         if user.is_locked():

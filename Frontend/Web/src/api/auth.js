@@ -22,6 +22,7 @@ export function registerApi(data) {
       postnom: data.postnom || '',
       prenom: data.prenom,
       email: data.email || '',
+      commune_kinshasa: data.commune_kinshasa,
       password: data.password,
       password_confirm: data.password_confirm,
     },
