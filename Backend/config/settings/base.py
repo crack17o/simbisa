@@ -249,7 +249,7 @@ LLM_PROVIDER = config('LLM_PROVIDER', default='gemini')
 EMBEDDING_PROVIDER = config('EMBEDDING_PROVIDER', default='gemini')
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 GEMINI_MODEL = config('GEMINI_MODEL', default='gemini-2.0-flash')
-GEMINI_EMBEDDING_MODEL = config('GEMINI_EMBEDDING_MODEL', default='models/text-embedding-004')
+GEMINI_EMBEDDING_MODEL = config('GEMINI_EMBEDDING_MODEL', default='models/gemini-embedding-2')
 
 RAG_RETRIEVAL_K = config('RAG_RETRIEVAL_K', default=5, cast=int)
 RAG_COLLECTION = config('RAG_COLLECTION', default='rawbank_policies')
