@@ -16,18 +16,17 @@ class GeminiProvider(LLMProvider):
         return bool(getattr(settings, 'GEMINI_API_KEY', ''))
 
     def generate(self, system_prompt: str, user_prompt: str, *, max_tokens: int = 400, temperature: float = 0.1) -> str:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
 
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel(
-            model_name=settings.GEMINI_MODEL,
-            system_instruction=system_prompt,
-        )
-        response = model.generate_content(
-            user_prompt,
-            generation_config={
-                'temperature': temperature,
-                'max_output_tokens': max_tokens,
-            },
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+            ),
         )
         return response.text.strip()

@@ -34,5 +34,5 @@ lime==0.2.0.1
 joblib==1.4.2
 
 # RAG — LLM & embeddings
-google-generativeai==0.8.3
+google-genai>=1.0.0
 openai==1.35.7

@@ -12,18 +12,19 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
         return bool(getattr(settings, 'GEMINI_API_KEY', ''))
 
     def _embed(self, text: str, task_type: str) -> list[float]:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
 
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        result = genai.embed_content(
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        result = client.models.embed_content(
             model=settings.GEMINI_EMBEDDING_MODEL,
-            content=text,
-            task_type=task_type,
+            contents=text,
+            config=types.EmbedContentConfig(task_type=task_type),
         )
-        return list(result['embedding'])
+        return list(result.embeddings[0].values)
 
     def embed_document(self, text: str) -> list[float]:
-        return self._embed(text, task_type='retrieval_document')
+        return self._embed(text, task_type='RETRIEVAL_DOCUMENT')
 
     def embed_query(self, text: str) -> list[float]:
-        return self._embed(text, task_type='retrieval_query')
+        return self._embed(text, task_type='RETRIEVAL_QUERY')
