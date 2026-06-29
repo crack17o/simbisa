@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simbisa/core/constants/routes.dart';
+import 'package:simbisa/core/i18n/translations.dart';
+import 'package:simbisa/core/providers/lang_provider.dart';
+import 'package:simbisa/core/providers/theme_provider.dart';
 import 'package:simbisa/core/models/client_profile.dart';
 import 'package:simbisa/core/models/wallet_models.dart';
 import 'package:simbisa/core/services/api_client.dart';
@@ -28,14 +32,14 @@ const _kycTypeMap = {
   'Carte de réfugié': 'refugie',
 };
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _clientService = ClientService();
   final _scoringService = ScoringService();
   final _walletService = WalletService();
@@ -289,6 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildMfaCard(),
               const SizedBox(height: 20),
               _buildChangePasswordCard(),
+              const SizedBox(height: 20),
+              _buildLegalCard(),
               const SizedBox(height: 20),
               _buildDangerZone(),
               const SizedBox(height: 32),
@@ -639,6 +645,144 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildLegalCard() {
+    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+    final lang = ref.watch(langProvider);
+
+    const langs = [
+      ('fr', '🇫🇷', 'Français'),
+      ('en', '🇬🇧', 'English'),
+      ('ln', '🇨🇩', 'Lingala'),
+    ];
+
+    return NeuCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(Tr.of(lang, 'profile.appearance'),
+              style: const TextStyle(
+                  fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const SizedBox(height: 14),
+
+          // Toggle thème
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: SimbisaColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+            ),
+            child: Row(children: [
+              Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  size: 16, color: SimbisaColors.or),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isDark ? Tr.of(lang, 'ui.theme.dark') : Tr.of(lang, 'ui.theme.light'),
+                  style: SimbisaText.body(13, color: SimbisaColors.blanc),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => ref.read(themeProvider.notifier).toggle(),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: 44,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: isDark ? SimbisaColors.or : SimbisaColors.muted.withValues(alpha: 0.3),
+                  ),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 250),
+                    alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.all(3),
+                      width: 18,
+                      height: 18,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 12),
+
+          // Sélecteur de langue
+          Text(Tr.of(lang, 'lang.label'),
+              style: SimbisaText.label(color: SimbisaColors.muted)),
+          const SizedBox(height: 8),
+          Row(
+            children: langs.map((entry) {
+              final (code, flag, label) = entry;
+              final selected = code == lang;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => ref.read(langProvider.notifier).setLang(code),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? SimbisaColors.or.withValues(alpha: 0.12)
+                          : SimbisaColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selected
+                            ? SimbisaColors.or.withValues(alpha: 0.5)
+                            : Colors.white.withValues(alpha: 0.06),
+                        width: selected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(flag, style: const TextStyle(fontSize: 18)),
+                        const SizedBox(height: 4),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                            color: selected ? SimbisaColors.or : SimbisaColors.muted,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 14),
+
+          _LegalRow(
+            icon: Icons.help_outline_rounded,
+            label: Tr.of(lang, 'profile.help'),
+            onTap: () => context.push(AppRoutes.help),
+          ),
+          const SizedBox(height: 8),
+          _LegalRow(
+            icon: Icons.shield_outlined,
+            label: Tr.of(lang, 'ui.privacy'),
+            onTap: () => context.push(AppRoutes.privacy),
+          ),
+          const SizedBox(height: 8),
+          _LegalRow(
+            icon: Icons.article_outlined,
+            label: Tr.of(lang, 'ui.terms'),
+            onTap: () => context.push(AppRoutes.terms),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDangerZone() {
     return NeuCard(
       child: Column(
@@ -658,6 +802,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ]),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LegalRow extends StatelessWidget {
+  const _LegalRow({required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: SimbisaColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        ),
+        child: Row(children: [
+          Icon(icon, size: 16, color: SimbisaColors.or),
+          const SizedBox(width: 12),
+          Expanded(child: Text(label, style: SimbisaText.body(13, color: SimbisaColors.blanc))),
+          const Icon(Icons.arrow_forward_ios, size: 13, color: SimbisaColors.muted),
+        ]),
       ),
     );
   }

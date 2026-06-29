@@ -38,9 +38,9 @@ export default function Savings() {
   const totalUsd = parseFloat(usdAccount?.solde || 0)
   const totalCdf = parseFloat(cdfAccount?.solde || 0)
 
-  const handleDepot = async (account, amount) => {
+  const handleDepot = async (account, amount, mode = '') => {
     try {
-      await depotSavings(account.id, { montant: String(amount), description: 'Dépôt via Simbisa Web' })
+      await depotSavings(account.id, { montant: String(amount), mode_paiement: mode, description: 'Dépôt via Simbisa Web' })
       toast.success('Dépôt enregistré.')
       load()
     } catch (err) {
@@ -48,9 +48,9 @@ export default function Savings() {
     }
   }
 
-  const handleRetrait = async (account, amount) => {
+  const handleRetrait = async (account, amount, mode = '') => {
     try {
-      await retraitSavings(account.id, { montant: String(amount), description: 'Retrait via Simbisa Web' })
+      await retraitSavings(account.id, { montant: String(amount), mode_paiement: mode, description: 'Retrait via Simbisa Web' })
       toast.success('Retrait effectué.')
       load()
     } catch (err) {
@@ -104,10 +104,13 @@ export default function Savings() {
                 <div key={op.id} className="neu-sm px-4 py-3 rounded-xl flex items-center justify-between gap-3">
                   <div>
                     <Badge label={op.type_operation} />
-                    <p className="text-xs text-muted mt-1">{formatDate(op.date_operation)}</p>
+                    {op.mode_paiement && (
+                      <p className="text-xs mt-0.5" style={{ color: '#D4AF37' }}>{op.mode_paiement.replace('_', ' ')}</p>
+                    )}
+                    <p className="text-xs text-muted mt-0.5">{formatDate(op.date_operation)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-blanc">
+                    <p className={`font-semibold ${op.type_operation === 'retrait' ? 'text-danger' : 'text-success'}`}>
                       {op.type_operation === 'retrait' ? '−' : '+'}
                       {formatMoney(op.montant, op.devise)}
                     </p>

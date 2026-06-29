@@ -58,6 +58,46 @@ class MobileMoneyAccount(TimestampedModel):
         return f"{self.operateur} — {self.numero_telephone} ({self.devise})"
 
 
+MODES_PAIEMENT = [
+    ('illicocash',   'Illico Cash'),
+    ('mpesa',        'Vodacom M-Pesa'),
+    ('orange_money', 'Orange Money'),
+    ('airtel_money', 'Airtel Money'),
+    ('africell',     'Africell Money'),
+]
+
+
+class WalletTransaction(TimestampedModel):
+    """Journal des dépôts et retraits sur un wallet Rawbank."""
+    TYPES = [('depot', 'Dépôt'), ('retrait', 'Retrait')]
+
+    wallet = models.ForeignKey(
+        WalletRawbank, on_delete=models.CASCADE, related_name='transactions'
+    )
+    type_transaction = models.CharField(max_length=20, choices=TYPES)
+    montant = models.DecimalField(
+        max_digits=15, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    solde_avant = models.DecimalField(max_digits=15, decimal_places=2)
+    solde_apres = models.DecimalField(max_digits=15, decimal_places=2)
+    mode_paiement = models.CharField(max_length=50, choices=MODES_PAIEMENT)
+    numero_paiement = models.CharField(max_length=20, blank=True)
+    reference_externe = models.CharField(max_length=100, blank=True)
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = 'wallet_transaction'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['wallet', 'created_at']),
+            models.Index(fields=['type_transaction']),
+        ]
+
+    def __str__(self):
+        return f"{self.type_transaction} {symbole(self.wallet.devise)}{self.montant}"
+
+
 class MobileMoneyTransaction(TimestampedModel):
     TYPES = [
         ('depot', 'Dépôt'),

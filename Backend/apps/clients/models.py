@@ -12,6 +12,21 @@ class Client(TimestampedModel):
         ('eleve', 'Élevé'),
     ]
 
+    NIVEAUX_COMPTE = [
+        ('standard', 'Standard'),
+        ('pro', 'Pro'),
+        ('pro_plus', 'Pro+'),
+        ('premium', 'Premium'),
+    ]
+
+    # Plafonds crédit USD par niveau de compte
+    PLAFONDS_PAR_NIVEAU = {
+        'standard': {'max_usd': 300,   'max_mois': 6},
+        'pro':      {'max_usd': 700,   'max_mois': 9},
+        'pro_plus': {'max_usd': 1200,  'max_mois': 12},
+        'premium':  {'max_usd': 2500,  'max_mois': 12},
+    }
+
     id_utilisateur = models.OneToOneField(
         Utilisateur, on_delete=models.CASCADE,
         related_name='client_profile', db_column='id_utilisateur'
@@ -36,6 +51,7 @@ class Client(TimestampedModel):
         verbose_name='Revenu estimé (CDF)',
     )
     niveau_risque = models.CharField(max_length=20, choices=NIVEAUX_RISQUE, default='non_evalue')
+    niveau_compte = models.CharField(max_length=20, choices=NIVEAUX_COMPTE, default='standard', db_index=True)
     date_inscription = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -67,6 +83,14 @@ class Client(TimestampedModel):
         if devise == CDF:
             return self.revenu_estime_cdf
         return self.revenu_estime_usd
+
+    @property
+    def plafond_credit_usd(self) -> int:
+        return self.PLAFONDS_PAR_NIVEAU[self.niveau_compte]['max_usd']
+
+    @property
+    def plafond_duree_mois(self) -> int:
+        return self.PLAFONDS_PAR_NIVEAU[self.niveau_compte]['max_mois']
 
 
 class Identite(TimestampedModel):

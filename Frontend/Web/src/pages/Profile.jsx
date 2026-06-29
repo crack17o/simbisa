@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { User, MapPin, Briefcase, FileCheck, Upload, CheckCircle, Lock } from 'lucide-react'
-import { toast } from 'sonner'
+import { User, MapPin, Briefcase, FileCheck, Upload, CheckCircle, Lock, Award, Globe, Sun, Moon } from 'lucide-react'
+import { toast } from '@/lib/toast'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import FormField from '@/components/molecules/FormField'
 import Button from '@/components/atoms/Button'
 import Badge from '@/components/atoms/Badge'
 import { useAuth } from '@/context/AuthContext'
+import { useTheme } from '@/context/ThemeContext'
+import { useLang } from '@/context/LangContext'
+import { LANGS } from '@/lib/i18n'
 import { getMyProfile, updateMyProfile, submitKyc } from '@/api/clients'
 import { mfaSetupApi, mfaVerifyApi, changePasswordApi } from '@/api/auth'
 import { KYC_TYPE_MAP } from '@/constants/roles'
@@ -14,7 +17,10 @@ const KYC_TYPES = Object.keys(KYC_TYPE_MAP)
 
 export default function Profile() {
   const { user } = useAuth()
+  const { theme, toggleTheme } = useTheme()
+  const { lang, setLang, t } = useLang()
   const [profile, setProfile] = useState({ profession: '', adresse: '', date_naissance: '' })
+  const [niveauCompte, setNiveauCompte] = useState('standard')
   const [kyc, setKyc] = useState({ type_piece: '', numero_piece: '', date_expiration: '' })
   const [kycFile, setKycFile] = useState(null)
   const [kycStatus, setKycStatus] = useState('en_attente')
@@ -31,6 +37,7 @@ export default function Profile() {
     getMyProfile()
       .then(p => {
         setProfile({ profession: p.profession || '', adresse: p.adresse || '', date_naissance: p.date_naissance || '' })
+        if (p.niveau_compte) setNiveauCompte(p.niveau_compte)
         if (p.identites?.length) {
           setKycStatus(p.identites[p.identites.length - 1].statut_verification)
         } else {
@@ -126,10 +133,20 @@ export default function Profile() {
             <User size={20} style={{ color: '#D4AF37' }} />
             <h2 className="font-display font-bold text-blanc">Informations personnelles</h2>
           </div>
-          <div className="neu-inset p-4 rounded-xl">
-            <p className="text-sm font-semibold text-blanc">{user?.name}</p>
-            <p className="text-xs text-muted">{user?.telephone}</p>
-            {user?.email && <p className="text-xs text-muted">{user.email}</p>}
+          <div className="neu-inset p-4 rounded-xl flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-blanc">{user?.name}</p>
+              <p className="text-xs text-muted">{user?.telephone}</p>
+              {user?.email && <p className="text-xs text-muted">{user.email}</p>}
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold"
+                style={{ background: '#D4AF3720', color: '#D4AF37', border: '1px solid #D4AF3740' }}>
+                <Award size={12} />
+                {niveauCompte === 'pro_plus' ? 'Pro+' : niveauCompte.charAt(0).toUpperCase() + niveauCompte.slice(1)}
+              </div>
+              <p className="text-xs text-muted">Niveau compte</p>
+            </div>
           </div>
           <FormField label="Profession" icon={Briefcase} value={profile.profession}
             onChange={e => setProfile(p => ({ ...p, profession: e.target.value }))} />
@@ -202,6 +219,55 @@ export default function Profile() {
           ) : (
             <p className="text-sm text-success">MFA activé — OTP requis à chaque connexion.</p>
           )}
+        </div>
+
+        {/* Apparence & Langue */}
+        <div className="neu-flat p-6 flex flex-col gap-5 lg:col-span-2">
+          <div className="flex items-center gap-3">
+            <Globe size={20} style={{ color: '#D4AF37' }} />
+            <h2 className="font-display font-bold text-blanc">{t('profile.appearance')}</h2>
+          </div>
+
+          {/* Thème */}
+          <div className="flex items-center justify-between px-4 py-3 rounded-xl neu-inset">
+            <div className="flex items-center gap-3">
+              {theme === 'dark' ? <Moon size={16} className="text-muted" /> : <Sun size={16} className="text-muted" />}
+              <span className="text-sm text-blanc">{theme === 'dark' ? t('ui.theme.dark') : t('ui.theme.light')}</span>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="relative inline-flex w-11 h-6 rounded-full transition-colors duration-250 focus:outline-none"
+              style={{ background: theme === 'dark' ? '#D4AF37' : 'rgba(156,163,175,0.3)' }}
+            >
+              <span
+                className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-250"
+                style={{ transform: theme === 'dark' ? 'translateX(22px)' : 'translateX(2px)' }}
+              />
+            </button>
+          </div>
+
+          {/* Langue */}
+          <div>
+            <p className="text-xs text-muted uppercase tracking-widest mb-3">{t('lang.label')}</p>
+            <div className="grid grid-cols-3 gap-3">
+              {Object.entries(LANGS).map(([code, info]) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => setLang(code)}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all"
+                  style={lang === code
+                    ? { background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.5)', color: '#D4AF37' }
+                    : { background: 'var(--color-surface)', borderColor: 'rgba(255,255,255,0.06)', color: 'var(--color-muted)' }
+                  }
+                >
+                  <span className="text-base">{info.flag}</span>
+                  <span>{info.label}</span>
+                  {lang === code && <span className="ml-auto text-xs">✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleChangePassword} className="neu-flat p-6 flex flex-col gap-4 lg:col-span-2">

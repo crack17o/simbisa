@@ -96,7 +96,19 @@ class SimbisaText {
   }
 }
 
-// ─── Theme ───────────────────────────────────────────────────────────────────
+// ─── Light palette ───────────────────────────────────────────────────────────
+class SimbisaLightColors {
+  static const surface  = Color(0xFFEDEDE8);
+  static const panel    = Color(0xFFE4E4DF);
+  static const panelAlt = Color(0xFFDCDCD7);
+  static const blanc    = Color(0xFF1A1A1A);
+  static const muted    = Color(0xFF6B7280);
+  static const or       = Color(0xFFB8960C);
+  static const orLight  = Color(0xFFD4AF37);
+  static const orDark   = Color(0xFF8B6E09);
+}
+
+// ─── Theme sombre ────────────────────────────────────────────────────────────
 ThemeData simbisaTheme() {
   return ThemeData(
     useMaterial3: true,
@@ -130,6 +142,48 @@ ThemeData simbisaTheme() {
       backgroundColor: SimbisaColors.panel,
       selectedItemColor: SimbisaColors.or,
       unselectedItemColor: SimbisaColors.muted,
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
+    ),
+  );
+}
+
+// ─── Thème clair ─────────────────────────────────────────────────────────────
+ThemeData simbisaLightTheme() {
+  return ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: SimbisaLightColors.surface,
+    colorScheme: const ColorScheme.light(
+      surface: SimbisaLightColors.panel,
+      primary: SimbisaLightColors.or,
+      secondary: SimbisaLightColors.orLight,
+      error: SimbisaColors.danger,
+      onSurface: SimbisaLightColors.blanc,
+      onPrimary: Colors.white,
+    ),
+    fontFamily: GoogleFonts.inter().fontFamily,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: SimbisaLightColors.panel,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: false,
+      iconTheme: IconThemeData(color: SimbisaLightColors.blanc),
+      titleTextStyle: TextStyle(
+        fontFamily: 'Sora',
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: SimbisaLightColors.blanc,
+      ),
+    ),
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: SimbisaLightColors.panel,
+      selectedItemColor: SimbisaLightColors.or,
+      unselectedItemColor: SimbisaLightColors.muted,
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {

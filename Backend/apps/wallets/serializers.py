@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.core.currency import DEVISE_CHOICES
-from .models import WalletRawbank, MobileMoneyAccount, MobileMoneyTransaction
+from .models import WalletRawbank, MobileMoneyAccount, MobileMoneyTransaction, WalletTransaction
 
 
 class WalletSerializer(serializers.ModelSerializer):
@@ -31,3 +31,20 @@ class MobileMoneyTransactionSerializer(serializers.ModelSerializer):
             'date_transaction', 'reference_externe', 'description',
         ]
         read_only_fields = fields
+
+
+class WalletTransactionSerializer(serializers.ModelSerializer):
+    symbole = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WalletTransaction
+        fields = [
+            'id', 'type_transaction', 'montant', 'solde_avant', 'solde_apres',
+            'mode_paiement', 'numero_paiement', 'reference_externe', 'description',
+            'symbole', 'created_at',
+        ]
+        read_only_fields = fields
+
+    def get_symbole(self, obj):
+        from apps.core.currency import symbole
+        return symbole(obj.wallet.devise)

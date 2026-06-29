@@ -161,12 +161,18 @@ class ScoringOrchestrator:
         today = date.today()
         duree = self.demande.duree_mois
 
+        # Taux de base selon le score
         if score_global >= 75:
             taux = Decimal('2.5')
         elif score_global >= 60:
             taux = Decimal('3.0')
         else:
             taux = Decimal('3.5')
+
+        # Remise de fidélité selon le niveau de compte
+        _remises = {'pro': Decimal('0.25'), 'pro_plus': Decimal('0.5'), 'premium': Decimal('0.75')}
+        niveau = self.demande.id_client.niveau_compte
+        taux = max(Decimal('1.5'), taux - _remises.get(niveau, Decimal('0')))
 
         credit = Credit.objects.create(
             id_demande=self.demande,

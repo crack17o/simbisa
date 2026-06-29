@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { Sparkles, Copy, RefreshCw, Check, Wifi, WifiOff } from 'lucide-react'
 import Button from '@/components/atoms/Button'
 import { generateMemo, getRagStatus } from '@/api/rag'

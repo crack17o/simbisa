@@ -49,15 +49,31 @@ class DemandeSerializer(ModelSerializer):
             )
 
         montant = data.get('montant_demande')
+        duree_mois = data.get('duree_mois')
         if montant is not None:
             try:
                 valider_montant_credit(montant, devise)
             except ValueError as e:
-                limits = get_credit_limits(devise)
+                raise SimbisaException(str(e), code='montant_hors_plage') from e
+            # Vérification plafond niveau de compte
+            from apps.core.exchange_rate import get_cdf_per_usd
+            from apps.core.currency import USD, CDF
+            plafond_usd = client.plafond_credit_usd
+            montant_usd = float(montant) if devise == USD else float(montant) / get_cdf_per_usd()
+            if montant_usd > plafond_usd:
+                from apps.core.currency import symbole
                 raise SimbisaException(
-                    str(e),
-                    code='montant_hors_plage',
-                ) from e
+                    f"Votre niveau {client.niveau_compte.upper()} autorise un maximum de "
+                    f"${plafond_usd} USD. Passez au niveau supérieur pour emprunter davantage.",
+                    code='plafond_niveau_compte',
+                )
+
+        if duree_mois is not None and duree_mois > client.plafond_duree_mois:
+            raise SimbisaException(
+                f"Votre niveau {client.niveau_compte.upper()} autorise une durée maximale "
+                f"de {client.plafond_duree_mois} mois.",
+                code='duree_hors_plafond',
+            )
 
         return data
 

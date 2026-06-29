@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'core/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simbisa/core/constants/router.dart';
+import 'package:simbisa/core/providers/lang_provider.dart';
+import 'package:simbisa/core/providers/theme_provider.dart';
 import 'package:simbisa/core/services/auth_service.dart';
+import 'package:simbisa/core/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await AuthService().restoreSession();
 
-  // Force portrait orientation
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Status bar styling
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -23,18 +24,35 @@ Future<void> main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
-  runApp(const SimbisaApp());
+  runApp(const ProviderScope(child: SimbisaApp()));
 }
 
-class SimbisaApp extends StatelessWidget {
+class SimbisaApp extends ConsumerWidget {
   const SimbisaApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+    final langCode = ref.watch(langProvider);
+
+    final locale = switch (langCode) {
+      'en' => const Locale('en', 'US'),
+      'ln' => const Locale('ln'),
+      _ => const Locale('fr', 'CD'),
+    };
+
     return MaterialApp.router(
       title: 'Simbisa · Rawbank FinTech',
       debugShowCheckedModeBanner: false,
-      theme: simbisaTheme(),
+      locale: locale,
+      supportedLocales: const [
+        Locale('fr', 'CD'),
+        Locale('en', 'US'),
+        Locale('ln'),
+      ],
+      theme: simbisaLightTheme(),
+      darkTheme: simbisaTheme(),
+      themeMode: themeMode,
       routerConfig: appRouter,
     );
   }

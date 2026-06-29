@@ -1,17 +1,19 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import Logo from '@/components/atoms/Logo'
 import Avatar from '@/components/atoms/Avatar'
 import NavItem from '@/components/molecules/NavItem'
 import clsx from 'clsx'
 import { useAuth } from '@/context/AuthContext'
+import { useLang } from '@/context/LangContext'
 import { getNavItems, getRoleLabel } from '@/constants/navigation'
 import { ROLES } from '@/constants/roles'
 
 export default function Sidebar({ user }) {
   const [collapsed, setCollapsed] = useState(false)
   const { logout } = useAuth()
+  const { t } = useLang()
   const navigate = useNavigate()
 
   const navItems = getNavItems(user?.role)
@@ -55,7 +57,7 @@ export default function Sidebar({ user }) {
 
       <nav className="flex-1 overflow-y-auto p-3 flex flex-col gap-1">
         {navItems.map(item => (
-          <NavItem key={item.to} {...item} collapsed={collapsed} />
+          <NavItem key={item.to} {...item} label={t(item.key) || item.label} collapsed={collapsed} />
         ))}
       </nav>
 
@@ -77,7 +79,7 @@ export default function Sidebar({ user }) {
               <button
                 onClick={handleLogout}
                 className="text-muted hover:text-danger transition-colors"
-                title="Déconnexion"
+                title={t('action.logout')}
               >
                 <LogOut size={14} />
               </button>
@@ -85,6 +87,14 @@ export default function Sidebar({ user }) {
           </div>
         )}
       </div>
+
+      {!collapsed && (
+        <div className="px-4 pb-4 flex gap-3 justify-center">
+          <Link to="/privacy" className="text-[10px] text-muted hover:text-or transition-colors">{t('ui.privacy')}</Link>
+          <span className="text-muted text-[10px]">·</span>
+          <Link to="/terms" className="text-[10px] text-muted hover:text-or transition-colors">{t('ui.terms')}</Link>
+        </div>
+      )}
 
       {collapsed && (
         <button

@@ -36,6 +36,15 @@ class CompteEpargne(TimestampedModel):
 class OperationEpargne(TimestampedModel):
     TYPES = [('depot', 'Dépôt'), ('retrait', 'Retrait')]
 
+    MODES_PAIEMENT = [
+        ('',             'Interne / virement'),
+        ('illicocash',   'Illico Cash'),
+        ('mpesa',        'Vodacom M-Pesa'),
+        ('orange_money', 'Orange Money'),
+        ('airtel_money', 'Airtel Money'),
+        ('africell',     'Africell Money'),
+    ]
+
     id_compte_epargne = models.ForeignKey(
         CompteEpargne, on_delete=models.CASCADE, related_name='operations'
     )
@@ -46,6 +55,9 @@ class OperationEpargne(TimestampedModel):
     )
     solde_avant = models.DecimalField(max_digits=15, decimal_places=2)
     solde_apres = models.DecimalField(max_digits=15, decimal_places=2)
+    mode_paiement = models.CharField(max_length=50, choices=MODES_PAIEMENT, default='', blank=True)
+    numero_paiement = models.CharField(max_length=20, blank=True)
+    reference_externe = models.CharField(max_length=100, blank=True)
     date_operation = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=255, blank=True)
 

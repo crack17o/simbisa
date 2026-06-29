@@ -12,4 +12,7 @@ class AppRoutes {
   static const aiExplain     = '/ai-explanations';
   static const onboarding    = '/onboarding';
   static const echeancier    = '/echeancier';
+  static const help          = '/help';
+  static const privacy       = '/privacy';
+  static const terms         = '/terms';
 }

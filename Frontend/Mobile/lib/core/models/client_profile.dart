@@ -6,6 +6,7 @@ class ClientProfile {
     required this.email,
     required this.kycValid,
     required this.niveauRisque,
+    required this.niveauCompte,
     required this.communeLabel,
     required this.dateInscription,
     required this.profession,
@@ -20,6 +21,7 @@ class ClientProfile {
   final String? email;
   final bool kycValid;
   final String niveauRisque;
+  final String niveauCompte;
   final String communeLabel;
   final String? dateInscription;
   final String profession;
@@ -40,6 +42,7 @@ class ClientProfile {
       email: user['email'] as String?,
       kycValid: json['kyc_valid'] == true,
       niveauRisque: json['niveau_risque'] as String? ?? 'moyen',
+      niveauCompte: json['niveau_compte'] as String? ?? 'standard',
       communeLabel: json['commune_label'] as String? ?? '',
       dateInscription: json['date_inscription'] as String?,
       profession: json['profession'] as String? ?? '',

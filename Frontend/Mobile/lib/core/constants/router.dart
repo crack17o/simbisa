@@ -9,6 +9,9 @@ import 'package:simbisa/features/credit/screens/my_credits_screen.dart';
 import 'package:simbisa/features/credit/screens/repayments_screen.dart';
 import 'package:simbisa/features/dashboard/screens/client_shell.dart';
 import 'package:simbisa/features/scoring/screens/ai_explanations_screen.dart';
+import 'package:simbisa/features/help/screens/help_screen.dart';
+import 'package:simbisa/features/legal/screens/privacy_screen.dart';
+import 'package:simbisa/features/legal/screens/terms_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: AppRoutes.login,
@@ -17,7 +20,9 @@ final appRouter = GoRouter(
     final location = state.matchedLocation;
     final isPublicRoute = location == AppRoutes.login
         || location == AppRoutes.register
-        || location == AppRoutes.forgotPassword;
+        || location == AppRoutes.forgotPassword
+        || location == AppRoutes.privacy
+        || location == AppRoutes.terms;
 
     if (!loggedIn && !isPublicRoute) return AppRoutes.login;
     if (loggedIn && (location == AppRoutes.login || location == AppRoutes.register)) {
@@ -37,6 +42,9 @@ final appRouter = GoRouter(
     GoRoute(path: AppRoutes.myCredits, builder: (_, __) => const MyCreditsScreen()),
     GoRoute(path: AppRoutes.repayments, builder: (_, __) => const RepaymentsScreen()),
     GoRoute(path: AppRoutes.aiExplain, builder: (_, __) => const AIExplanationsScreen()),
+    GoRoute(path: AppRoutes.help, builder: (_, __) => const HelpScreen()),
+    GoRoute(path: AppRoutes.privacy, builder: (_, __) => const PrivacyScreen()),
+    GoRoute(path: AppRoutes.terms, builder: (_, __) => const TermsScreen()),
     GoRoute(
       path: AppRoutes.echeancier,
       builder: (_, state) {

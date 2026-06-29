@@ -2,6 +2,8 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
+import { ThemeProvider } from '@/context/ThemeContext'
+import { LangProvider } from '@/context/LangContext'
 import ProtectedRoute from '@/components/guards/ProtectedRoute'
 import GuestRoute from '@/components/guards/GuestRoute'
 import { ROLES, getHomeRoute } from '@/constants/roles'
@@ -40,6 +42,10 @@ import AdminSettings from '@/pages/admin/AdminSettings'
 import AuditorDashboard from '@/pages/audit/AuditorDashboard'
 import AuditDecisions from '@/pages/audit/AuditDecisions'
 import AuditReports from '@/pages/audit/AuditReports'
+import Privacy from '@/pages/Privacy'
+import Terms from '@/pages/Terms'
+import Help from '@/pages/Help'
+import ErrorPage from '@/pages/ErrorPage'
 
 function RootRedirect() {
   const { isAuthenticated, user, loading } = useAuth()
@@ -56,6 +62,11 @@ function AppRoutes() {
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/403" element={<ErrorPage code={403} />} />
+      <Route path="/404" element={<ErrorPage code={404} />} />
+      <Route path="/500" element={<ErrorPage code={500} />} />
 
       {/* Client */}
       <Route path="/dashboard" element={<ProtectedRoute roles={[ROLES.CLIENT]}><Dashboard /></ProtectedRoute>} />
@@ -113,7 +124,12 @@ function AppRoutes() {
       <Route path="/audit/decisions" element={<ProtectedRoute roles={[ROLES.AUDITOR]}><AuditDecisions /></ProtectedRoute>} />
       <Route path="/audit/reports" element={<ProtectedRoute roles={[ROLES.AUDITOR]}><AuditReports /></ProtectedRoute>} />
 
-      <Route path="*" element={<RootRedirect />} />
+      {/* Aide — tous les rôles authentifiés */}
+      <Route path="/help" element={
+        <ProtectedRoute roles={Object.values(ROLES)}><Help /></ProtectedRoute>
+      } />
+
+      <Route path="*" element={<ErrorPage code={404} />} />
     </Routes>
   )
 }
@@ -121,25 +137,26 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
+      <LangProvider>
       <AuthProvider>
         <AppRoutes />
         <Toaster
           position="bottom-right"
-          theme="dark"
           toastOptions={{
             style: {
-              background: '#1e1e1e',
-              color: '#f8f6f0',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--toast-bg)',
+              color: 'var(--color-blanc)',
+              border: '1px solid var(--toast-border)',
               borderRadius: '14px',
               fontSize: '13px',
+              fontFamily: 'Inter, sans-serif',
             },
-            success: { style: { borderLeft: '3px solid #22c55e' } },
-            error:   { style: { borderLeft: '3px solid #ef4444' } },
-            info:    { style: { borderLeft: '3px solid #D4AF37' } },
           }}
         />
       </AuthProvider>
+      </LangProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

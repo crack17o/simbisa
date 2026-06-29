@@ -1,44 +1,44 @@
-# Guide de déploiement VPS — Simbisa Backend
+# Guide VPS — Simbisa Backend
 
-> Ubuntu 24.04 · Docker Compose · Nginx · Let's Encrypt
+> Ubuntu 24.04 · Docker Compose · Nginx · Let's Encrypt  
+> VPS : `srv1768871.hstgr.cloud` — IP : `187.124.49.36`
 
 ---
 
 ## Sommaire
 
 1. [Première installation complète](#1-première-installation-complète)
-2. [Lancer / arrêter l'application](#2-lancer--arrêter-lapplication)
-3. [Mettre à jour le code (git pull)](#3-mettre-à-jour-le-code-git-pull)
-4. [Accéder à MySQL dans Docker](#4-accéder-à-mysql-dans-docker)
-5. [Accéder à Celery](#5-accéder-à-celery)
-6. [Modifier le `.env` en production](#6-modifier-le-env-en-production)
-7. [Logs](#7-logs)
-8. [Commandes Django utiles](#8-commandes-django-utiles)
-9. [Nginx — modifier la config](#9-nginx--modifier-la-config)
-10. [Renouveler le SSL](#10-renouveler-le-ssl)
-11. [Dépannage rapide](#11-dépannage-rapide)
+2. [Allumer / éteindre les containers](#2-allumer--éteindre-les-containers)
+3. [Mettre à jour le code](#3-mettre-à-jour-le-code)
+4. [Transférer la base de données du PC vers le VPS](#4-transférer-la-base-de-données-du-pc-vers-le-vps)
+5. [Commandes Docker utiles](#5-commandes-docker-utiles)
+6. [Commandes Nginx utiles](#6-commandes-nginx-utiles)
+7. [Commandes Linux utiles](#7-commandes-linux-utiles)
+8. [MySQL dans Docker](#8-mysql-dans-docker)
+9. [Celery](#9-celery)
+10. [SSL — Let's Encrypt](#10-ssl--lets-encrypt)
+11. [Dépannage](#11-dépannage)
 
 ---
 
 ## 1. Première installation complète
 
-> À faire **une seule fois** sur un VPS vierge.
+> À faire **une seule fois** sur le VPS vierge.
 
 ### 1.1 — Connexion et sécurisation
 
 ```bash
 # Depuis ton PC
-ssh root@<IP_DU_VPS>
+ssh root@187.124.49.36
 
-# Mettre à jour
 apt update && apt upgrade -y
 
 # Créer un utilisateur de déploiement
-adduser deploy
-usermod -aG sudo deploy
+adduser simbisa
+usermod -aG sudo simbisa
 
 # Copier ta clé SSH
-rsync --archive --chown=deploy:deploy ~/.ssh /home/deploy
+rsync --archive --chown=simbisa:simbisa ~/.ssh /home/simbisa
 
 # Pare-feu
 ufw allow OpenSSH
@@ -48,18 +48,14 @@ ufw enable
 
 # Se reconnecter avec le bon utilisateur
 exit
-ssh deploy@<IP_DU_VPS>
+ssh simbisa@187.124.49.36
 ```
 
 ### 1.2 — Installer Git
 
 ```bash
-git --version          # vérifier si déjà installé
-
-# Si non installé :
+git --version   # vérifier si déjà installé
 sudo apt install -y git
-git config --global user.name "Ton Nom"
-git config --global user.email "ton@email.com"
 ```
 
 ### 1.3 — Installer Docker
@@ -81,7 +77,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Autoriser "deploy" à utiliser Docker sans sudo
+# Autoriser l'utilisateur à utiliser Docker sans sudo
 sudo usermod -aG docker $USER
 newgrp docker
 
@@ -93,86 +89,76 @@ docker --version && docker compose version
 
 ```bash
 cd /srv
-sudo mkdir simbisa && sudo chown deploy:deploy simbisa
-git clone https://github.com/<ton-user>/simbisa.git simbisa
+sudo mkdir simbisa && sudo chown simbisa:simbisa simbisa
+git clone https://github.com/crack17o/simbisa.git simbisa
 cd simbisa/Backend
 ```
 
-> **Repo privé ?** Utilise un token :
-> `git clone https://<TOKEN>@github.com/<ton-user>/simbisa.git simbisa`
-
-### 1.5 — Configurer le `.env`
+### 1.5 — Créer le `.env`
 
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-**Variables obligatoires à modifier :**
+**Valeurs obligatoires :**
 
 ```env
-# Générer avec : python3 -c "import secrets; print(secrets.token_urlsafe(50))"
-SECRET_KEY=<clé_unique_50_caractères>
+SECRET_KEY=<générer: python3 -c "import secrets; print(secrets.token_urlsafe(50))">
 DEBUG=False
-ALLOWED_HOSTS=ton-domaine.com,<IP_VPS>
+ALLOWED_HOSTS=srv1768871.hstgr.cloud,187.124.49.36
 DJANGO_SETTINGS_MODULE=config.settings.production
 
-# Base de données — IMPORTANT : DB_HOST doit être "db" (nom du service Docker)
-DB_HOST=db
+DB_HOST=db          # ← TOUJOURS "db", jamais "localhost"
 DB_NAME=simbisa_db
 DB_USER=simbisa_user
 DB_PASSWORD=<mot_de_passe_fort>
+DB_PORT=3306
 DB_ROOT_PASSWORD=<autre_mot_de_passe_fort>
 
-# Redis — IMPORTANT : "redis" = nom du service Docker
-REDIS_URL=redis://redis:6379/0
-REDIS_PASSWORD=<mot_de_passe_redis>
+REDIS_URL=redis://redis:6379/0    # ← "redis" = nom du service Docker
+REDIS_PASSWORD=
 
-# CORS
-CORS_ALLOWED_ORIGINS=https://ton-domaine.com
+CORS_ALLOWED_ORIGINS=https://srv1768871.hstgr.cloud
+SECURE_SSL_REDIRECT=False         # ← False jusqu'à ce que SSL soit configuré
 
-# SSL
-SECURE_SSL_REDIRECT=True
-
-# Cloudinary (KYC)
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 ```
 
-### 1.6 — Lancer l'application
+### 1.6 — Préparer le dossier logs
+
+```bash
+mkdir -p /srv/simbisa/Backend/logs
+chmod 777 /srv/simbisa/Backend/logs
+```
+
+### 1.7 — Lancer les containers
 
 ```bash
 cd /srv/simbisa/Backend
-
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 # Suivre le démarrage
 docker compose logs -f api
-
-# Vérifier que tout tourne
-docker compose ps
 ```
 
-### 1.7 — Créer le superadmin Django
+### 1.8 — Créer le superadmin Django
 
 ```bash
 docker compose exec api python manage.py createsuperuser
 ```
 
-### 1.8 — Installer et configurer Nginx
+### 1.9 — Installer Nginx
 
 ```bash
 sudo apt install -y nginx
-sudo nano /etc/nginx/sites-available/simbisa
-```
 
-Coller (remplace `ton-domaine.com`) :
-
-```nginx
+sudo tee /etc/nginx/sites-available/simbisa > /dev/null << 'EOF'
 server {
     listen 80;
-    server_name ton-domaine.com www.ton-domaine.com;
+    server_name srv1768871.hstgr.cloud;
 
     client_max_body_size 20M;
 
@@ -184,56 +170,60 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 120s;
     }
-
-    location /static/ {
-        alias /srv/simbisa/Backend/staticfiles/;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
-
-    location /media/ {
-        alias /srv/simbisa/Backend/media/;
-    }
 }
-```
+EOF
 
-```bash
 sudo ln -s /etc/nginx/sites-available/simbisa /etc/nginx/sites-enabled/
-sudo rm /etc/nginx/sites-enabled/default
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
-sudo systemctl enable nginx && sudo systemctl start nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+
+# Tester
+curl http://srv1768871.hstgr.cloud/health/
 ```
 
-### 1.9 — SSL avec Let's Encrypt
+### 1.10 — SSL avec Let's Encrypt
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d ton-domaine.com -d www.ton-domaine.com
-
-# Tester le renouvellement automatique
+sudo certbot --nginx -d srv1768871.hstgr.cloud
 sudo certbot renew --dry-run
+```
+
+Après le SSL, activer la redirection dans `.env` :
+
+```env
+SECURE_SSL_REDIRECT=True
+```
+
+Puis redémarrer :
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 ---
 
-## 2. Lancer / arrêter l'application
+## 2. Allumer / éteindre les containers
 
 ```bash
 cd /srv/simbisa/Backend
 
-# Démarrer
+# Démarrer (sans rebuild)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-# Arrêter (garde les volumes/données)
-docker compose down
+# Démarrer avec rebuild (après git pull)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
-# Arrêter ET supprimer les volumes (⚠️ efface la BDD)
-docker compose down -v
+# Arrêter (conserve les données)
+docker compose down
 
 # Redémarrer un seul service
 docker compose restart api
 docker compose restart celery
 docker compose restart celery-beat
+docker compose restart redis
 
 # Voir l'état de tous les services
 docker compose ps
@@ -241,98 +231,212 @@ docker compose ps
 
 ---
 
-## 3. Mettre à jour le code (git pull)
+## 3. Mettre à jour le code
 
 ```bash
 cd /srv/simbisa/Backend
 
-# Récupérer les changements
-git pull origin main
+# Si git refuse à cause de divergence
+git config pull.rebase false
 
-# Rebuild et redémarrer (migrations + collectstatic automatiques)
+# Synchroniser avec GitHub (écrase les changements locaux)
+git fetch origin
+git reset --hard origin/main
+
+# Rebuild et redémarrer
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+# Vérifier que tout tourne
+docker compose ps
+docker compose logs --tail=30 api
 ```
 
-> Les migrations Django et `collectstatic` s'exécutent **automatiquement** au démarrage
-> grâce à la commande définie dans `docker-compose.prod.yml`.
+> Le `.env` n'est **jamais** touché par `git reset --hard` (il est dans `.gitignore`).
 
 ---
 
-## 4. Accéder à MySQL dans Docker
+## 4. Transférer la base de données du PC vers le VPS
 
-### Ouvrir un shell MySQL interactif
+### Option A — Depuis MySQL local (si installé sur le PC)
+
+```bash
+# Sur ton PC (PowerShell ou Git Bash)
+mysqldump -u root -p simbisa_db > simbisa_backup.sql
+
+# Transférer le fichier sur le VPS
+scp simbisa_backup.sql simbisa@187.124.49.36:/srv/simbisa/Backend/
+```
+
+### Option B — Depuis Docker sur le PC (si MySQL tourne dans Docker)
+
+```bash
+# Sur ton PC
+docker exec <nom_container_mysql> mysqldump -u root -p<ROOT_PASSWORD> simbisa_db > simbisa_backup.sql
+
+# Transférer sur le VPS
+scp simbisa_backup.sql simbisa@187.124.49.36:/srv/simbisa/Backend/
+```
+
+### Importer sur le VPS
+
+```bash
+# Sur le VPS — importer dans le container MySQL
+docker compose exec -T db mysql -u root -p<DB_ROOT_PASSWORD> simbisa_db < simbisa_backup.sql
+
+# Vérifier
+docker compose exec db mysql -u simbisa_user -p<DB_PASSWORD> simbisa_db -e "SHOW TABLES;"
+```
+
+### Backup rapide de la BDD sur le VPS
+
+```bash
+docker compose exec db mysqldump -u root -p<DB_ROOT_PASSWORD> simbisa_db \
+  > backup_$(date +%Y%m%d_%H%M).sql
+```
+
+---
+
+## 5. Commandes Docker utiles
+
+```bash
+# État des containers
+docker compose ps
+
+# Logs en direct (tous les services)
+docker compose logs -f
+
+# Logs d'un service spécifique
+docker compose logs -f api
+docker compose logs --tail=50 api
+
+# Entrer dans un container
+docker compose exec api bash
+docker compose exec db bash
+
+# Lancer une commande Django
+docker compose exec api python manage.py <commande>
+docker compose exec api python manage.py shell
+docker compose exec api python manage.py migrate
+docker compose exec api python manage.py makemigrations
+docker compose exec api python manage.py collectstatic --noinput
+
+# Copier un fichier hors d'un container
+docker cp backend-api-1:/app/apps/scoring/migrations/ ./apps/scoring/migrations/
+
+# Espace utilisé par Docker
+docker system df
+
+# Nettoyer les images inutilisées (ne touche pas aux volumes)
+docker system prune -f
+
+# Voir les volumes
+docker volume ls
+```
+
+---
+
+## 6. Commandes Nginx utiles
+
+```bash
+# Tester la configuration (TOUJOURS avant de recharger)
+sudo nginx -t
+
+# Recharger sans coupure de service (après modification config)
+sudo systemctl reload nginx
+
+# Redémarrer complètement
+sudo systemctl restart nginx
+
+# Voir le statut
+sudo systemctl status nginx
+
+# Voir la config complète chargée
+sudo nginx -T
+
+# Logs d'accès en direct
+sudo tail -f /var/log/nginx/access.log
+
+# Logs d'erreur en direct
+sudo tail -f /var/log/nginx/error.log
+
+# Modifier la config
+sudo nano /etc/nginx/sites-available/simbisa
+# Puis :
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+---
+
+## 7. Commandes Linux utiles
+
+```bash
+# Espace disque
+df -h
+
+# Mémoire RAM
+free -h
+
+# Processus actifs
+htop    # ou : top
+
+# Voir les ports ouverts
+sudo ss -tlnp
+
+# Pare-feu
+sudo ufw status
+sudo ufw allow <port>
+
+# Voir les services systemd actifs
+sudo systemctl list-units --type=service --state=running
+
+# Redémarrer le VPS (⚠️ coupe tout)
+sudo reboot
+
+# Variables d'environnement du .env
+cat /srv/simbisa/Backend/.env
+grep DB_HOST /srv/simbisa/Backend/.env
+```
+
+---
+
+## 8. MySQL dans Docker
 
 ```bash
 cd /srv/simbisa/Backend
 
-# Se connecter avec l'utilisateur applicatif
+# Connexion utilisateur applicatif
 docker compose exec db mysql -u simbisa_user -p simbisa_db
-# → entrer la valeur de DB_PASSWORD dans .env
+# → entrer DB_PASSWORD
 
-# Se connecter en root (accès total)
+# Connexion root (accès total)
 docker compose exec db mysql -u root -p
-# → entrer la valeur de DB_ROOT_PASSWORD dans .env
+# → entrer DB_ROOT_PASSWORD
+
+# Retrouver les identifiants
+grep -E "DB_USER|DB_PASSWORD|DB_ROOT_PASSWORD|DB_NAME" .env
 ```
 
-### Commandes MySQL utiles
+**Commandes SQL utiles :**
 
 ```sql
--- Lister les tables
 SHOW TABLES;
-
--- Voir les utilisateurs
-SELECT user, host FROM mysql.user;
-
--- Voir la taille de la base
-SELECT table_name, ROUND((data_length + index_length) / 1024 / 1024, 2) AS size_mb
-FROM information_schema.tables
-WHERE table_schema = 'simbisa_db'
-ORDER BY size_mb DESC;
-
--- Quitter
+SHOW DATABASES;
+SELECT COUNT(*) FROM auth_user;
+DESCRIBE nom_de_table;
 EXIT;
 ```
 
-### Retrouver les identifiants MySQL
-
-Les identifiants sont dans ton fichier `.env` :
-
-```bash
-grep -E "DB_USER|DB_PASSWORD|DB_ROOT_PASSWORD|DB_NAME" /srv/simbisa/Backend/.env
-```
-
-| Variable | Rôle |
-|---|---|
-| `DB_USER` | Utilisateur applicatif (`simbisa_user`) |
-| `DB_PASSWORD` | Mot de passe de `DB_USER` |
-| `DB_ROOT_PASSWORD` | Mot de passe root MySQL |
-| `DB_NAME` | Nom de la base (`simbisa_db`) |
-
-### Faire un dump de la base (backup)
-
-```bash
-docker compose exec db mysqldump -u root -p<DB_ROOT_PASSWORD> simbisa_db > backup_$(date +%Y%m%d).sql
-```
-
-### Restaurer un dump
-
-```bash
-docker compose exec -T db mysql -u root -p<DB_ROOT_PASSWORD> simbisa_db < backup_20240101.sql
-```
-
 ---
 
-## 5. Accéder à Celery
-
-### Voir l'état des workers
+## 9. Celery
 
 ```bash
 cd /srv/simbisa/Backend
 
-# Logs en direct du worker
+# Logs du worker
 docker compose logs -f celery
 
-# Logs du scheduler (beat)
+# Logs du scheduler
 docker compose logs -f celery-beat
 
 # Inspecter les workers actifs
@@ -341,198 +445,83 @@ docker compose exec celery celery -A config inspect active
 # Voir les tâches enregistrées
 docker compose exec celery celery -A config inspect registered
 
-# Statistiques des workers
-docker compose exec celery celery -A config inspect stats
-```
-
-### Relancer Celery sans tout rebuild
-
-```bash
-docker compose restart celery
-docker compose restart celery-beat
-```
-
-### Vider la file d'attente (purge)
-
-```bash
-# ⚠️ Supprime toutes les tâches en attente
+# Vider la file d'attente (⚠️ supprime les tâches en attente)
 docker compose exec celery celery -A config purge
-```
 
-### Voir les tâches dans l'admin Django
-
-Les résultats Celery sont visibles dans l'interface admin :
-`https://ton-domaine.com/admin/` → **Celery Results** et **Periodic Tasks**
-
----
-
-## 6. Modifier le `.env` en production
-
-```bash
-nano /srv/simbisa/Backend/.env
-
-# Après modification, redémarrer les services concernés
-cd /srv/simbisa/Backend
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-> Un changement de `SECRET_KEY` invalide toutes les sessions JWT actives.
-> Un changement de `DB_PASSWORD` nécessite aussi de le changer dans MySQL.
-
----
-
-## 7. Logs
-
-```bash
-cd /srv/simbisa/Backend
-
-# Tous les services en même temps
-docker compose logs -f
-
-# Un service spécifique
-docker compose logs -f api
-docker compose logs -f celery
-docker compose logs -f celery-beat
-docker compose logs -f db
-docker compose logs -f redis
-
-# Les 100 dernières lignes d'un service
-docker compose logs --tail=100 api
-
-# Logs applicatifs Django (fichiers dans le container)
-docker compose exec api tail -f logs/django.log
+# Relancer sans rebuild
+docker compose restart celery celery-beat
 ```
 
 ---
 
-## 8. Commandes Django utiles
+## 10. SSL — Let's Encrypt
 
 ```bash
-cd /srv/simbisa/Backend
-
-# Shell Django interactif
-docker compose exec api python manage.py shell
-
-# Appliquer les migrations manuellement
-docker compose exec api python manage.py migrate
-
-# Créer un superutilisateur
-docker compose exec api python manage.py createsuperuser
-
-# Collecter les fichiers statiques
-docker compose exec api python manage.py collectstatic --noinput
-
-# Voir toutes les migrations et leur état
-docker compose exec api python manage.py showmigrations
-
-# Créer les migrations après modification d'un modèle
-docker compose exec api python manage.py makemigrations
-```
-
----
-
-## 9. Nginx — modifier la config
-
-```bash
-# Éditer la config
-sudo nano /etc/nginx/sites-available/simbisa
-
-# Tester avant d'appliquer (ne jamais skipper cette étape)
-sudo nginx -t
-
-# Recharger sans coupure de service
-sudo systemctl reload nginx
-
-# Statut de Nginx
-sudo systemctl status nginx
-```
-
----
-
-## 10. Renouveler le SSL
-
-Le renouvellement est automatique via un cron Certbot. Pour forcer manuellement :
-
-```bash
-sudo certbot renew
-
-# Puis recharger Nginx
-sudo systemctl reload nginx
-```
-
-Pour vérifier la date d'expiration :
-
-```bash
+# Voir la date d'expiration du certificat
 sudo certbot certificates
+
+# Renouveler manuellement
+sudo certbot renew
+sudo systemctl reload nginx
+
+# Le renouvellement automatique est géré par un cron systemd
+# Vérifier qu'il est actif :
+sudo systemctl status certbot.timer
 ```
 
 ---
 
-## 11. Dépannage rapide
+## 11. Dépannage
 
-### Le site ne répond pas
+### L'API ne répond pas
 
 ```bash
-# 1. Vérifier Docker
-docker compose ps
-
-# 2. Vérifier Nginx
-sudo systemctl status nginx
-
-# 3. Vérifier le pare-feu
-sudo ufw status
+docker compose ps                         # Vérifier les containers
+curl http://127.0.0.1:8000/health/        # Tester Django directement
+sudo systemctl status nginx               # Vérifier Nginx
+sudo ufw status                           # Vérifier le pare-feu
 ```
 
 ### Erreur 502 Bad Gateway
 
-Nginx ne peut pas joindre le container Django.
+Nginx ne joint pas Django.
 
 ```bash
-# Vérifier que le container "api" tourne
-docker compose ps api
-
-# Regarder ses logs
-docker compose logs --tail=50 api
-
-# Redémarrer
+docker compose logs --tail=30 api
 docker compose restart api
 ```
 
-### Le container `api` redémarre en boucle
+### Container api redémarre en boucle
 
 ```bash
-# Voir l'erreur exacte
-docker compose logs --tail=100 api
-
-# Cause fréquente : .env mal configuré (DB_HOST, REDIS_URL, SECRET_KEY manquant)
-grep -E "DB_HOST|REDIS_URL|SECRET_KEY|DEBUG" /srv/simbisa/Backend/.env
+docker compose logs --tail=50 api
+# Causes fréquentes :
+# - DB_HOST=localhost au lieu de DB_HOST=db
+# - REDIS_URL mal formé
+# - Permission denied sur /app/logs → chmod 777 logs/
+grep -E "DB_HOST|REDIS_URL|SECRET_KEY" .env
 ```
 
-### La base de données ne démarre pas
+### Nginx retourne sa propre 404
 
 ```bash
-docker compose logs db
-
-# Vérifier l'espace disque
-df -h
+# La config a peut-être changé sans reload
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-### Regénérer une `SECRET_KEY`
+### Erreur Redis AUTH
+
+```bash
+# Si Redis tourne sans mot de passe :
+# Mettre REDIS_URL=redis://redis:6379/0 dans .env
+# Si Redis tourne AVEC mot de passe (--requirepass) :
+# Mettre REDIS_URL=redis://:MOT_DE_PASSE@redis:6379/0
+grep REDIS .env
+```
+
+### Regénérer la SECRET_KEY
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(50))"
-# Copier la valeur dans .env puis redémarrer
-```
-
-### Voir l'espace disque et les volumes Docker
-
-```bash
-# Espace disque global
-df -h
-
-# Espace utilisé par Docker
-docker system df
-
-# Nettoyer les images et containers inutilisés (⚠️ ne touche pas aux volumes)
-docker system prune -f
+# Copier dans .env → TOUJOURS relancer les containers après
 ```

@@ -43,6 +43,8 @@ class SavingsOperation {
     required this.soldeApres,
     required this.dateOperation,
     required this.symbole,
+    this.modePaiement = '',
+    this.numeroPaiement = '',
   });
 
   final int id;
@@ -51,6 +53,10 @@ class SavingsOperation {
   final double soldeApres;
   final String? dateOperation;
   final String symbole;
+  final String modePaiement;
+  final String numeroPaiement;
+
+  bool get isDepot => typeOperation == 'depot';
 
   factory SavingsOperation.fromJson(Map<String, dynamic> json) {
     return SavingsOperation(
@@ -60,6 +66,8 @@ class SavingsOperation {
       soldeApres: double.tryParse(json['solde_apres']?.toString() ?? '') ?? 0,
       dateOperation: json['date_operation'] as String?,
       symbole: json['symbole'] as String? ?? '\$',
+      modePaiement: json['mode_paiement'] as String? ?? '',
+      numeroPaiement: json['numero_paiement'] as String? ?? '',
     );
   }
 }

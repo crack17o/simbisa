@@ -34,6 +34,8 @@ class ClientSerializer(serializers.ModelSerializer):
     kyc_valid = serializers.BooleanField(read_only=True)
     commune_label = serializers.SerializerMethodField()
     agent_assigne = UtilisateurPublicSerializer(source='id_agent_assigne', read_only=True)
+    plafond_credit_usd = serializers.IntegerField(read_only=True)
+    plafond_duree_mois = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Client
@@ -41,10 +43,13 @@ class ClientSerializer(serializers.ModelSerializer):
             'id', 'utilisateur', 'profession', 'adresse', 'commune_kinshasa', 'commune_label',
             'id_agent_assigne', 'agent_assigne', 'date_naissance',
             'revenu_estime_usd', 'revenu_estime_cdf',
-            'niveau_risque', 'date_inscription',
-            'identites', 'age', 'kyc_valid',
+            'niveau_risque', 'niveau_compte', 'plafond_credit_usd', 'plafond_duree_mois',
+            'date_inscription', 'identites', 'age', 'kyc_valid',
         ]
-        read_only_fields = ['id', 'niveau_risque', 'date_inscription', 'commune_kinshasa', 'id_agent_assigne']
+        read_only_fields = [
+            'id', 'niveau_risque', 'niveau_compte', 'date_inscription',
+            'commune_kinshasa', 'id_agent_assigne',
+        ]
 
     def get_commune_label(self, obj):
         return commune_label(obj.commune_kinshasa)
@@ -111,6 +116,9 @@ class AgentClientUpdateSerializer(serializers.Serializer):
     date_naissance = serializers.DateField(required=False)
     revenu_estime_usd = serializers.DecimalField(max_digits=15, decimal_places=2, required=False)
     revenu_estime_cdf = serializers.DecimalField(max_digits=15, decimal_places=2, required=False)
+    niveau_compte = serializers.ChoiceField(
+        choices=['standard', 'pro', 'pro_plus', 'premium'], required=False
+    )
     nom = serializers.CharField(max_length=100, required=False)
     postnom = serializers.CharField(max_length=100, required=False, allow_blank=True)
     prenom = serializers.CharField(max_length=100, required=False)
@@ -137,7 +145,7 @@ class AgentClientUpdateSerializer(serializers.Serializer):
             instance.id_utilisateur.save(update_fields=list(user_fields.keys()) + ['updated_at'])
 
         client_fields = {}
-        for key in ('profession', 'adresse', 'date_naissance', 'revenu_estime_usd', 'revenu_estime_cdf'):
+        for key in ('profession', 'adresse', 'date_naissance', 'revenu_estime_usd', 'revenu_estime_cdf', 'niveau_compte'):
             if key in validated_data:
                 client_fields[key] = validated_data[key]
         if client_fields:

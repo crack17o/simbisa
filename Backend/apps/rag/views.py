@@ -60,11 +60,13 @@ def rag_status_view(request):
     llm_provider = settings.LLM_PROVIDER
     emb_provider = settings.EMBEDDING_PROVIDER
 
+    llm_ok = llm_is_available()
     return Response({
         'success': True,
         'data': {
+            'status': 'ok' if llm_ok else 'degraded',
             'llm_provider': llm_provider,
-            'llm_available': llm_is_available(),
+            'llm_available': llm_ok,
             'llm_model': settings.GEMINI_MODEL if llm_provider == 'gemini' else settings.OPENAI_MODEL,
             'embedding_provider': emb_provider,
             'embedding_available': embedding_is_available(),

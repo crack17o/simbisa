@@ -40,9 +40,31 @@ class CompteEpargneListCreateView(generics.ListCreateAPIView):
         return Response({'success': True, 'data': response.data}, status=status.HTTP_201_CREATED)
 
 
+_MODES_EPARGNE = ['', 'illicocash', 'mpesa', 'orange_money', 'airtel_money', 'africell']
+
+
 class OperationSerializer(Serializer):
     montant = DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('0.01'))
+    mode_paiement = CharField(max_length=50, required=False, allow_blank=True, default='')
+    numero_paiement = CharField(max_length=20, required=False, allow_blank=True, default='')
+    reference_externe = CharField(max_length=100, required=False, allow_blank=True, default='')
     description = CharField(max_length=255, required=False, allow_blank=True)
+
+    def validate(self, data):
+        mode = data.get('mode_paiement', '')
+        numero = data.get('numero_paiement', '')
+        if mode not in _MODES_EPARGNE:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'mode_paiement': f'Mode invalide : {mode}'})
+        if mode and mode != 'illicocash' and numero:
+            from apps.ussd.msisdn import detect_operateur
+            detected = detect_operateur(numero)
+            if detected and detected != mode:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({
+                    'numero_paiement': f"Ce numéro appartient à {detected}, pas à {mode}."
+                })
+        return data
 
 
 @api_view(['POST'])
@@ -69,6 +91,9 @@ def depot_epargne_view(request, pk):
             montant=montant,
             solde_avant=solde_avant,
             solde_apres=compte.solde,
+            mode_paiement=serializer.validated_data.get('mode_paiement', ''),
+            numero_paiement=serializer.validated_data.get('numero_paiement', ''),
+            reference_externe=serializer.validated_data.get('reference_externe', ''),
             description=serializer.validated_data.get('description', ''),
         )
 
@@ -118,6 +143,9 @@ def retrait_epargne_view(request, pk):
             montant=montant,
             solde_avant=solde_avant,
             solde_apres=compte.solde,
+            mode_paiement=serializer.validated_data.get('mode_paiement', ''),
+            numero_paiement=serializer.validated_data.get('numero_paiement', ''),
+            reference_externe=serializer.validated_data.get('reference_externe', ''),
             description=serializer.validated_data.get('description', ''),
         )
 
@@ -151,6 +179,9 @@ def list_operations_view(request, pk):
             'montant': str(op.montant),
             'solde_avant': str(op.solde_avant),
             'solde_apres': str(op.solde_apres),
+            'mode_paiement': op.mode_paiement,
+            'numero_paiement': op.numero_paiement,
+            'reference_externe': op.reference_externe,
             'description': op.description,
             'date_operation': op.date_operation,
             'devise': compte.devise,

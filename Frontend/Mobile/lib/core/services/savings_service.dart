@@ -39,18 +39,34 @@ class SavingsService {
         .toList();
   }
 
-  Future<double> depot(int accountId, double montant, {String? description}) async {
+  Future<double> depot(
+    int accountId,
+    double montant, {
+    String modePaiement = '',
+    String numeroPaiement = '',
+    String? description,
+  }) async {
     final res = await _api.post('savings/$accountId/depot/', body: {
       'montant': montant,
+      if (modePaiement.isNotEmpty) 'mode_paiement': modePaiement,
+      if (numeroPaiement.isNotEmpty) 'numero_paiement': numeroPaiement,
       if (description != null) 'description': description,
     });
     final data = res['data'] as Map<String, dynamic>;
     return double.tryParse(data['nouveau_solde']?.toString() ?? '') ?? 0;
   }
 
-  Future<double> retrait(int accountId, double montant, {String? description}) async {
+  Future<double> retrait(
+    int accountId,
+    double montant, {
+    String modePaiement = '',
+    String numeroPaiement = '',
+    String? description,
+  }) async {
     final res = await _api.post('savings/$accountId/retrait/', body: {
       'montant': montant,
+      if (modePaiement.isNotEmpty) 'mode_paiement': modePaiement,
+      if (numeroPaiement.isNotEmpty) 'numero_paiement': numeroPaiement,
       if (description != null) 'description': description,
     });
     final data = res['data'] as Map<String, dynamic>;

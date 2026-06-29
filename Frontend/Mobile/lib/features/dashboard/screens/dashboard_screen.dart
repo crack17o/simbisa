@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simbisa/core/constants/routes.dart';
+import 'package:simbisa/core/i18n/translations.dart';
 import 'package:simbisa/core/models/credit_models.dart';
 import 'package:simbisa/core/models/savings_models.dart';
+import 'package:simbisa/core/providers/lang_provider.dart';
 import 'package:simbisa/core/services/api_client.dart';
 import 'package:simbisa/core/services/client_service.dart';
 import 'package:simbisa/core/services/credit_service.dart';
@@ -228,10 +231,118 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           Row(
             children: [
+              Consumer(
+                builder: (context, ref, _) {
+                  final lang = ref.watch(langProvider);
+                  return GestureDetector(
+                    onTap: () => _showLangPicker(context, ref, lang),
+                    child: Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: SimbisaColors.panel,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: NeuShadow.sm(),
+                      ),
+                      child: Center(
+                        child: Text(
+                          lang == 'en' ? '🇬🇧' : lang == 'ln' ? '🇨🇩' : '🇫🇷',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
               _IconButton(icon: Icons.refresh_rounded, onTap: _load),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _showLangPicker(BuildContext context, WidgetRef ref, String current) {
+    const langs = [
+      ('fr', '🇫🇷', 'Français'),
+      ('en', '🇬🇧', 'English'),
+      ('ln', '🇨🇩', 'Lingala'),
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: SimbisaColors.panel,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: SimbisaColors.muted.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              Tr.of(current, 'lang.label'),
+              style: const TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: SimbisaColors.blanc,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...langs.map((entry) {
+              final (code, flag, label) = entry;
+              final isSelected = code == current;
+              return GestureDetector(
+                onTap: () {
+                  ref.read(langProvider.notifier).setLang(code);
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? SimbisaColors.or.withValues(alpha: 0.1)
+                        : SimbisaColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? SimbisaColors.or.withValues(alpha: 0.4)
+                          : Colors.white.withValues(alpha: 0.06),
+                    ),
+                  ),
+                  child: Row(children: [
+                    Text(flag, style: const TextStyle(fontSize: 20)),
+                    const SizedBox(width: 12),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected ? SimbisaColors.or : SimbisaColors.blanc,
+                      ),
+                    ),
+                    if (isSelected) ...[
+                      const Spacer(),
+                      const Icon(Icons.check_rounded, color: SimbisaColors.or, size: 18),
+                    ],
+                  ]),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }

@@ -35,3 +35,23 @@ class Command(BaseCommand):
 
         verb = 'créée' if created else 'mise à jour'
         self.stdout.write(self.style.SUCCESS(f'Tâche Beat {verb} : {task.name}'))
+
+        # Tâche simulation Mobile Money — toutes les heures
+        schedule_hourly, _ = CrontabSchedule.objects.get_or_create(
+            minute='0',
+            hour='*',
+            day_of_week='*',
+            day_of_month='*',
+            month_of_year='*',
+            timezone='Africa/Kinshasa',
+        )
+        task_mm, created_mm = PeriodicTask.objects.update_or_create(
+            name='Simbisa — Simulation Mobile Money — toutes les heures',
+            defaults={
+                'crontab': schedule_hourly,
+                'task': 'wallets.simulate_mm_activity',
+                'enabled': True,
+            },
+        )
+        verb_mm = 'créée' if created_mm else 'mise à jour'
+        self.stdout.write(self.style.SUCCESS(f'Tâche Beat {verb_mm} : {task_mm.name}'))
