@@ -15,7 +15,11 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        # text-embedding-004 is only available at v1, not v1beta
+        client = genai.Client(
+            api_key=settings.GEMINI_API_KEY,
+            http_options=types.HttpOptions(api_version='v1'),
+        )
         result = client.models.embed_content(
             model=settings.GEMINI_EMBEDDING_MODEL,
             contents=text,
