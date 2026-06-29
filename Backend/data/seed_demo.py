@@ -259,7 +259,7 @@ for (tel, nom, postnom, prenom, email, naissance, profession, revenu, niveau, co
             id_client=client,
             devise='USD',
             objectif_montant=Decimal(str(revenu * 3)),
-            objectif_description='Fonds d'urgence',
+            objectif_description="Fonds d'urgence",
         )
         initial_epargne = Decimal(str(round(revenu * random.uniform(0.1, 0.5), 2)))
         add_epargne_op(epargne, 'depot', initial_epargne, 'illicocash')
