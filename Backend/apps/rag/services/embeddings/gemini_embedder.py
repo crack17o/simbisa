@@ -1,3 +1,4 @@
+import httpx
 from django.conf import settings
 
 from .base import EmbeddingProvider
@@ -12,23 +13,25 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
         return bool(getattr(settings, 'GEMINI_API_KEY', ''))
 
     def _embed(self, text: str, task_type: str) -> list[float]:
-        from google import genai
-        from google.genai import types
+        model = settings.GEMINI_EMBEDDING_MODEL
+        model_id = model.removeprefix('models/')
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:embedContent"
 
-        # text-embedding-004 is only available at v1, not v1beta
-        client = genai.Client(
-            api_key=settings.GEMINI_API_KEY,
-            http_options=types.HttpOptions(api_version='v1'),
+        response = httpx.post(
+            url,
+            headers={"x-goog-api-key": settings.GEMINI_API_KEY},
+            json={
+                "model": model,
+                "content": {"parts": [{"text": text}]},
+                "taskType": task_type,
+            },
+            timeout=30.0,
         )
-        result = client.models.embed_content(
-            model=settings.GEMINI_EMBEDDING_MODEL,
-            contents=text,
-            config=types.EmbedContentConfig(task_type=task_type),
-        )
-        return list(result.embeddings[0].values)
+        response.raise_for_status()
+        return response.json()["embedding"]["values"]
 
     def embed_document(self, text: str) -> list[float]:
-        return self._embed(text, task_type='RETRIEVAL_DOCUMENT')
+        return self._embed(text, 'RETRIEVAL_DOCUMENT')
 
     def embed_query(self, text: str) -> list[float]:
-        return self._embed(text, task_type='RETRIEVAL_QUERY')
+        return self._embed(text, 'RETRIEVAL_QUERY')
