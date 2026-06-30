@@ -4,7 +4,7 @@ from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.serializers import Serializer, DecimalField, CharField
+from rest_framework.serializers import Serializer, DecimalField, CharField, ChoiceField
 
 from apps.core.permissions import IsClient
 from apps.core.currency import symbole
@@ -157,6 +157,67 @@ def retrait_epargne_view(request, pk):
             'devise': compte.devise,
             'nouveau_solde': str(compte.solde),
             'operation_id': op.pk,
+        }
+    })
+
+
+class ObjectifUpdateSerializer(Serializer):
+    objectif_montant = DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('1.00'), required=False)
+    objectif_description = CharField(max_length=255, required=False, allow_blank=True)
+    objectif_periodicite = ChoiceField(choices=['mensuel', 'annuel'], required=False)
+
+
+def _score_pts(montant, periodicite, solde):
+    if not montant or float(montant) <= 0:
+        return 0.0
+    ambition = min(float(montant) / 300 * 12, 12)
+    peri = 5.0 if periodicite == 'mensuel' else 2.0
+    progress = min(float(solde) / float(montant), 1.0) * 3
+    return round(ambition + peri + progress, 1)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsClient])
+def update_objectif_view(request, pk):
+    try:
+        compte = CompteEpargne.objects.get(pk=pk, id_client=request.user.client_profile)
+    except CompteEpargne.DoesNotExist:
+        return Response({'success': False, 'error': {'message': 'Compte introuvable.'}},
+                        status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ObjectifUpdateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+
+    if not data:
+        return Response({'success': False, 'error': {'message': 'Aucun champ à modifier.'}},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    old_pts = _score_pts(compte.objectif_montant, compte.objectif_periodicite, compte.solde)
+
+    update_fields = ['updated_at']
+    if 'objectif_montant' in data:
+        compte.objectif_montant = data['objectif_montant']
+        update_fields.append('objectif_montant')
+    if 'objectif_description' in data:
+        compte.objectif_description = data['objectif_description']
+        update_fields.append('objectif_description')
+    if 'objectif_periodicite' in data:
+        compte.objectif_periodicite = data['objectif_periodicite']
+        update_fields.append('objectif_periodicite')
+
+    compte.save(update_fields=update_fields)
+
+    new_pts = _score_pts(compte.objectif_montant, compte.objectif_periodicite, compte.solde)
+    delta = round(new_pts - old_pts, 1)
+
+    logger.info(f"Objectif mis à jour — compte #{pk} — delta score estimé : {delta:+.1f}")
+    return Response({
+        'success': True,
+        'data': CompteEpargneSerializer(compte).data,
+        'score_impact': {
+            'delta': delta,
+            'nouveau': new_pts,
         }
     })
 

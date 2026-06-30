@@ -5,10 +5,12 @@ import CreditRequestForm from '@/components/organisms/CreditRequestForm'
 import CreditDecisionBanner from '@/components/molecules/CreditDecisionBanner'
 import ScoringPanel from '@/components/organisms/ScoringPanel'
 import AIMemoPanel from '@/components/organisms/AIMemoPanel'
+import { useLang } from '@/context/LangContext'
 import { getMyScore } from '@/api/scoring'
 import { poll } from '@/utils/apiHelpers'
 
 export default function CreditRequest() {
+  const { t } = useLang()
   const [decision, setDecision] = useState(null)
   const [scoreData, setScoreData] = useState(null)
   const [polling, setPolling] = useState(false)
@@ -39,8 +41,8 @@ export default function CreditRequest() {
       } else {
         setDecision({
           decision: 'en_analyse',
-          motif: 'Demande enregistrée — analyse en cours.',
-          explication: 'Résultats disponibles sous peu dans votre espace scoring.',
+          motif: t('credit.registered'),
+          explication: t('credit.results_soon'),
           montant: form.montant,
           duree: form.duree,
         })
@@ -61,8 +63,8 @@ export default function CreditRequest() {
   ] : [0, 0, 0, 0]
 
   return (
-    <DashboardLayout title="Demande de crédit">
-      {polling && <p className="mb-4 text-sm text-muted">Analyse en cours…</p>}
+    <DashboardLayout title={t('credit.page_title')}>
+      {polling && <p className="mb-4 text-sm text-muted">{t('credit.analyzing')}</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="flex flex-col gap-6">

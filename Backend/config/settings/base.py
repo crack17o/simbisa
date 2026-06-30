@@ -298,6 +298,9 @@ else:
 
 SIMBISA_OTP_VALIDITY_MINUTES = config('SIMBISA_OTP_VALIDITY_MINUTES', default=10, cast=int)
 
+# URL du frontend (Vercel en prod, localhost en dev)
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

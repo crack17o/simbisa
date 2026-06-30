@@ -18,14 +18,14 @@ import 'package:simbisa/core/theme/widgets.dart';
 import 'package:simbisa/core/utils/formatters.dart';
 import 'package:simbisa/features/credit/screens/my_credits_screen.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final _clientService = ClientService();
   final _creditService = CreditService();
   final _savingsService = SavingsService();
@@ -107,16 +107,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final credit = active!.credit!;
     final sym = active.symbole;
     final montant = credit.mensualite;
+    final lang = ref.read(langProvider);
 
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: SimbisaColors.panel,
-        title: const Text('Confirmer le paiement'),
-        content: Text('Rembourser ${formatMoney(sym, montant, decimals: 2)} ?'),
+        title: Text(Tr.of(lang, 'dash.confirm_payment')),
+        content: Text('${formatMoney(sym, montant, decimals: 2)} ?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Payer')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(Tr.of(lang, 'action.cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(Tr.of(lang, 'action.pay'))),
         ],
       ),
     );
@@ -126,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _creditService.rembourser(creditId: credit.id, montant: montant);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Remboursement enregistré.')),
+        SnackBar(content: Text(Tr.of(lang, 'dash.repay_ok'))),
       );
       _load();
     } on ApiException catch (e) {
@@ -139,6 +140,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(langProvider);
+
     if (_loading) {
       return const Scaffold(
         backgroundColor: SimbisaColors.surface,
@@ -157,7 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Text(_error!, textAlign: TextAlign.center, style: SimbisaText.body(14, color: SimbisaColors.danger)),
                 const SizedBox(height: 16),
-                NeuButton(onTap: _load, child: const Text('Réessayer')),
+                NeuButton(onTap: _load, child: Text(Tr.of(lang, 'action.retry'))),
               ],
             ),
           ),
@@ -174,29 +177,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              SliverToBoxAdapter(child: _buildHeader(_displayName)),
+              SliverToBoxAdapter(child: _buildHeader(_displayName, lang)),
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _buildWelcomeBanner(),
+                    _buildWelcomeBanner(lang),
                     const SizedBox(height: 20),
-                    _buildStatsGrid(),
+                    _buildStatsGrid(lang),
                     const SizedBox(height: 20),
-                    if (_activeCredit != null) _buildNextRepayment(context),
+                    if (_activeCredit != null) _buildNextRepayment(context, lang),
                     if (_activeCredit != null) const SizedBox(height: 20),
                     SectionHeader(
-                      title: 'Historique des crédits',
-                      action: 'Voir tout →',
+                      title: Tr.of(lang, 'dash.credit_history'),
+                      action: Tr.of(lang, 'dash.see_all'),
                       onAction: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const MyCreditsScreen()),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildCreditList(context),
+                    _buildCreditList(lang),
                     const SizedBox(height: 20),
-                    _buildQuickActions(context),
+                    _buildQuickActions(context, lang),
                     const SizedBox(height: 32),
                   ]),
                 ),
@@ -208,7 +211,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildHeader(String name) {
+  Widget _buildHeader(String name, String lang) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
@@ -231,27 +234,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           Row(
             children: [
-              Consumer(
-                builder: (context, ref, _) {
-                  final lang = ref.watch(langProvider);
-                  return GestureDetector(
-                    onTap: () => _showLangPicker(context, ref, lang),
-                    child: Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: SimbisaColors.panel,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: NeuShadow.sm(),
-                      ),
-                      child: Center(
-                        child: Text(
-                          lang == 'en' ? '🇬🇧' : lang == 'ln' ? '🇨🇩' : '🇫🇷',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
+              GestureDetector(
+                onTap: () => _showLangPicker(context, lang),
+                child: Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: SimbisaColors.panel,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: NeuShadow.sm(),
+                  ),
+                  child: Center(
+                    child: Text(
+                      lang == 'en' ? '🇬🇧' : lang == 'ln' ? '🇨🇩' : '🇫🇷',
+                      style: const TextStyle(fontSize: 16),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
               _IconButton(icon: Icons.refresh_rounded, onTap: _load),
@@ -262,7 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showLangPicker(BuildContext context, WidgetRef ref, String current) {
+  void _showLangPicker(BuildContext context, String current) {
     const langs = [
       ('fr', '🇫🇷', 'Français'),
       ('en', '🇬🇧', 'English'),
@@ -347,7 +345,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildWelcomeBanner() {
+  Widget _buildWelcomeBanner(String lang) {
     return NeuCard(
       gradient: SimbisaColors.cardGradient,
       child: Row(
@@ -356,7 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Bienvenue,', style: SimbisaText.body(13, color: SimbisaColors.muted)),
+                Text(Tr.of(lang, 'dash.welcome'), style: SimbisaText.body(13, color: SimbisaColors.muted)),
                 const SizedBox(height: 4),
                 Text(_displayName, style: const TextStyle(fontFamily: 'Sora', fontSize: 22, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
                 const SizedBox(height: 10),
@@ -371,8 +369,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Expanded(
                       child: Text(
                         _kycValid
-                            ? 'KYC validé · ${_mmLabel()}'
-                            : 'KYC en attente · ${_mmLabel()}',
+                            ? '${Tr.of(lang, 'dash.kyc_valid')} · ${_mmLabel()}'
+                            : '${Tr.of(lang, 'dash.kyc_pending')} · ${_mmLabel()}',
                         style: SimbisaText.body(11, color: _kycValid ? SimbisaColors.success : SimbisaColors.warning),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -383,7 +381,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          ScoreRing(score: _score, size: 90, label: 'Mon score'),
+          ScoreRing(score: _score, size: 90, label: Tr.of(lang, 'dash.my_score')),
         ],
       ),
     );
@@ -398,7 +396,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return MobileMoneyOperator.describeForPhone(session?.telephone);
   }
 
-  Widget _buildStatsGrid() {
+  Widget _buildStatsGrid(String lang) {
     final savings = _savings;
     final sym = savings?.symbole ?? '\$';
     final rembourses = _credits.where((c) => c.credit?.statut == 'rembourse' || c.statut == 'cloture').length;
@@ -407,32 +405,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final stats = [
       _StatItem(
-        label: 'Solde épargne',
+        label: Tr.of(lang, 'dash.savings_balance'),
         value: formatMoney(sym, savings?.solde ?? 0),
         sub: savings?.goal != null && savings!.goal > 0
-            ? 'Objectif: ${formatMoney(sym, savings.goal)}'
-            : 'Compte USD',
+            ? '${Tr.of(lang, 'dash.goal_prefix')} ${formatMoney(sym, savings.goal)}'
+            : Tr.of(lang, 'nav.savings'),
         icon: Icons.savings_outlined,
         color: SimbisaColors.or,
       ),
       _StatItem(
-        label: 'Crédit en cours',
+        label: Tr.of(lang, 'dash.active_credit'),
         value: active != null ? formatMoney(active.symbole, active.montantAffiche) : '—',
-        sub: active != null ? '${active.dureeMois} mois' : 'Aucun crédit actif',
+        sub: active != null ? '${active.dureeMois} ${Tr.of(lang, 'label.months')}' : Tr.of(lang, 'dash.no_active_credit'),
         icon: Icons.credit_card_outlined,
         color: SimbisaColors.blue,
       ),
       _StatItem(
-        label: 'Score global',
+        label: Tr.of(lang, 'dash.global_score'),
         value: '$_score/100',
-        sub: 'Risque ${_riskLevel.toLowerCase()}',
+        sub: '${Tr.of(lang, 'dash.risk_level')} ${_riskLevel.toLowerCase()}',
         icon: Icons.trending_up_rounded,
         color: SimbisaColors.teal,
       ),
       _StatItem(
-        label: 'Taux remb.',
+        label: Tr.of(lang, 'dash.repay_rate'),
         value: total > 0 ? '${((rembourses / total) * 100).round()}%' : '—',
-        sub: '$rembourses/$total crédits soldés',
+        sub: '$rembourses/$total ${Tr.of(lang, 'dash.repaid_credits')}',
         icon: Icons.check_circle_outline,
         color: SimbisaColors.purple,
       ),
@@ -452,7 +450,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildNextRepayment(BuildContext context) {
+  Widget _buildNextRepayment(BuildContext context, String lang) {
     final active = _activeCredit!;
     final credit = active.credit!;
     return NeuCard(
@@ -471,14 +469,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Prochain remboursement', style: SimbisaText.body(12, color: SimbisaColors.muted)),
+                Text(Tr.of(lang, 'dash.next_repayment'), style: SimbisaText.body(12, color: SimbisaColors.muted)),
                 const SizedBox(height: 4),
                 Text(
                   formatMoney(active.symbole, credit.mensualite, decimals: 2),
                   style: const TextStyle(fontFamily: 'Sora', fontSize: 22, fontWeight: FontWeight.w800, color: SimbisaColors.orLight),
                 ),
                 Text(
-                  'Échéance ${formatDate(credit.dateFin)} · ${active.displayId}',
+                  '${Tr.of(lang, 'dash.due_date')} ${formatDate(credit.dateFin)} · ${active.displayId}',
                   style: SimbisaText.body(11, color: SimbisaColors.muted),
                 ),
               ],
@@ -486,18 +484,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           NeuButton(
             onTap: _payNextInstallment,
-            child: const Text('Payer', style: TextStyle(fontSize: 12)),
+            child: Text(Tr.of(lang, 'action.pay'), style: const TextStyle(fontSize: 12)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCreditList(BuildContext context) {
+  Widget _buildCreditList(String lang) {
     if (_credits.isEmpty) {
       return NeuCard(
         padding: const EdgeInsets.all(16),
-        child: Text('Aucun crédit pour le moment.', style: SimbisaText.body(13, color: SimbisaColors.muted)),
+        child: Text(Tr.of(lang, 'dash.no_credits'), style: SimbisaText.body(13, color: SimbisaColors.muted)),
       );
     }
 
@@ -524,7 +522,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(credit.displayId, style: SimbisaText.body(13, weight: FontWeight.w600)),
-                      Text('${credit.formattedDate} · ${credit.dureeMois} mois', style: SimbisaText.body(11, color: SimbisaColors.muted)),
+                      Text('${credit.formattedDate} · ${credit.dureeMois} ${Tr.of(lang, 'label.months')}', style: SimbisaText.body(11, color: SimbisaColors.muted)),
                     ],
                   ),
                 ),
@@ -547,18 +545,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, String lang) {
     final actions = [
-      (AppRoutes.creditRequest, 'Demander un crédit', Icons.credit_card_rounded, SimbisaColors.or),
-      (AppRoutes.savings, 'Épargner maintenant', Icons.savings_rounded, SimbisaColors.teal),
-      (AppRoutes.scoring, 'Voir mon scoring', Icons.bar_chart_rounded, SimbisaColors.purple),
-      (AppRoutes.profile, 'Mon profil KYC', Icons.person_rounded, SimbisaColors.blue),
+      (AppRoutes.creditRequest, Tr.of(lang, 'dash.request_credit'), Icons.credit_card_rounded, SimbisaColors.or),
+      (AppRoutes.savings, Tr.of(lang, 'dash.save_now'), Icons.savings_rounded, SimbisaColors.teal),
+      (AppRoutes.scoring, Tr.of(lang, 'dash.view_score'), Icons.bar_chart_rounded, SimbisaColors.purple),
+      (AppRoutes.profile, Tr.of(lang, 'dash.my_kyc_profile'), Icons.person_rounded, SimbisaColors.blue),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Actions rapides'),
+        SectionHeader(title: Tr.of(lang, 'dash.quick_actions')),
         const SizedBox(height: 12),
         ...actions.map((a) => Padding(
           padding: const EdgeInsets.only(bottom: 10),

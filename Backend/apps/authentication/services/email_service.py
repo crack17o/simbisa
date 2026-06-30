@@ -135,7 +135,7 @@ def send_welcome_email(user) -> None:
         'telephone': user.telephone,
         'email': user.email,
         'role_name': user.role.nom_role if user.role else 'Client',
-        'login_url': f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')}/login",
+        'login_url': f"{settings.FRONTEND_URL}/login",
     }
     html = render_to_string('authentication/email/welcome.html', ctx)
     text = (

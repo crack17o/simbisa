@@ -13,8 +13,13 @@ class CompteEpargne(TimestampedModel):
         max_digits=15, decimal_places=2, default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
+    PERIODICITE_CHOICES = [('mensuel', 'Mensuel'), ('annuel', 'Annuel')]
+
     objectif_montant = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     objectif_description = models.CharField(max_length=255, blank=True)
+    objectif_periodicite = models.CharField(
+        max_length=10, choices=PERIODICITE_CHOICES, default='mensuel', blank=True
+    )
     date_objectif = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     date_creation = models.DateTimeField(auto_now_add=True)

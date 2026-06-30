@@ -56,6 +56,21 @@ class SavingsService {
     return double.tryParse(data['nouveau_solde']?.toString() ?? '') ?? 0;
   }
 
+  Future<SavingsAccount> updateObjectif(
+    int accountId, {
+    required double objectifMontant,
+    required String objectifDescription,
+    required String objectifPeriodicite,
+  }) async {
+    final res = await _api.patch('savings/$accountId/objectif/', body: {
+      'objectif_montant': objectifMontant,
+      'objectif_description': objectifDescription,
+      'objectif_periodicite': objectifPeriodicite,
+    });
+    final data = res['data'] as Map<String, dynamic>;
+    return SavingsAccount.fromJson(data);
+  }
+
   Future<double> retrait(
     int accountId,
     double montant, {

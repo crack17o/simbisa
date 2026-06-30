@@ -8,8 +8,10 @@ import { PiggyBank, TrendingUp, Calendar, Award } from 'lucide-react'
 import { listSavings, depotSavings, retraitSavings, listSavingsOperations } from '@/api/savings'
 import { formatMoney } from '@/utils/apiHelpers'
 import { formatDate } from '@/utils/formatters'
+import { useLang } from '@/context/LangContext'
 
 export default function Savings() {
+  const { t } = useLang()
   const [accounts, setAccounts] = useState([])
   const [operations, setOperations] = useState([])
 
@@ -41,7 +43,7 @@ export default function Savings() {
   const handleDepot = async (account, amount, mode = '') => {
     try {
       await depotSavings(account.id, { montant: String(amount), mode_paiement: mode, description: 'Dépôt via Simbisa Web' })
-      toast.success('Dépôt enregistré.')
+      toast.success(t('sav.deposit_ok'))
       load()
     } catch (err) {
       toast.error(err.message)
@@ -51,7 +53,7 @@ export default function Savings() {
   const handleRetrait = async (account, amount, mode = '') => {
     try {
       await retraitSavings(account.id, { montant: String(amount), mode_paiement: mode, description: 'Retrait via Simbisa Web' })
-      toast.success('Retrait effectué.')
+      toast.success(t('sav.withdraw_ok'))
       load()
     } catch (err) {
       toast.error(err.message)
@@ -59,13 +61,13 @@ export default function Savings() {
   }
 
   return (
-    <DashboardLayout title="Épargne virtuelle">
+    <DashboardLayout title={t('sav.page_title')}>
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Épargne USD" value={formatMoney(totalUsd, 'USD')} sub={usdAccount?.objectif_description || '—'} icon={PiggyBank} accentColor="#D4AF37" />
-          <StatCard label="Épargne CDF" value={formatMoney(totalCdf, 'CDF')} sub={cdfAccount?.objectif_description || '—'} icon={PiggyBank} accentColor="#34D399" />
-          <StatCard label="Objectif USD" value={usdAccount ? `${Math.round(usdAccount.progression_pct)}%` : '—'} sub={usdAccount ? formatMoney(usdAccount.objectif_montant, 'USD') : ''} icon={TrendingUp} accentColor="#A78BFA" />
-          <StatCard label="Comptes actifs" value={String(accounts.length)} sub="USD + CDF" icon={Award} accentColor="#60A5FA" />
+          <StatCard label={t('sav.savings_usd')} value={formatMoney(totalUsd, 'USD')} sub={usdAccount?.objectif_description || '—'} icon={PiggyBank} accentColor="#D4AF37" />
+          <StatCard label={t('sav.savings_cdf')} value={formatMoney(totalCdf, 'CDF')} sub={cdfAccount?.objectif_description || '—'} icon={PiggyBank} accentColor="#34D399" />
+          <StatCard label={t('sav.goal_usd')} value={usdAccount ? `${Math.round(usdAccount.progression_pct)}%` : '—'} sub={usdAccount ? formatMoney(usdAccount.objectif_montant, 'USD') : ''} icon={TrendingUp} accentColor="#A78BFA" />
+          <StatCard label={t('sav.active_accounts')} value={String(accounts.length)} sub="USD + CDF" icon={Award} accentColor="#60A5FA" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {usdAccount && (
@@ -83,21 +85,18 @@ export default function Savings() {
             />
           )}
           {!usdAccount && !cdfAccount && (
-            <p className="text-sm text-muted">Aucun compte épargne actif. Contactez un agent pour en créer un.</p>
+            <p className="text-sm text-muted">{t('sav.no_accounts')}</p>
           )}
           <div className="neu-flat p-6 flex flex-col gap-4">
-            <h3 className="font-display font-bold text-blanc">Impact sur le scoring</h3>
-            <p className="text-sm text-muted leading-relaxed">
-              Chaque dépôt régulier renforce votre score comportemental.
-              Consultez votre espace scoring pour suivre votre progression.
-            </p>
+            <h3 className="font-display font-bold text-blanc">{t('sav.score_impact')}</h3>
+            <p className="text-sm text-muted leading-relaxed">{t('sav.score_text')}</p>
           </div>
         </div>
 
         {operations.length > 0 && (
           <div className="neu-flat p-6 flex flex-col gap-4">
             <h3 className="font-display font-bold text-blanc flex items-center gap-2">
-              <Calendar size={18} className="text-or" /> Historique des opérations
+              <Calendar size={18} className="text-or" /> {t('sav.operations')}
             </h3>
             <div className="flex flex-col gap-2">
               {operations.map(op => (
@@ -114,7 +113,7 @@ export default function Savings() {
                       {op.type_operation === 'retrait' ? '−' : '+'}
                       {formatMoney(op.montant, op.devise)}
                     </p>
-                    <p className="text-xs text-muted">Solde {formatMoney(op.solde_apres, op.devise)}</p>
+                    <p className="text-xs text-muted">{t('sav.remaining')} {formatMoney(op.solde_apres, op.devise)}</p>
                   </div>
                 </div>
               ))}

@@ -10,6 +10,7 @@ import Button from '@/components/atoms/Button'
 import ScoreRing from '@/components/atoms/ScoreRing'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { useLang } from '@/context/LangContext'
 import { getMyCredits } from '@/api/credits'
 import { getMyScore } from '@/api/scoring'
 import { listSavings } from '@/api/savings'
@@ -19,6 +20,7 @@ import { formatMoney, mapDecisionLabel } from '@/utils/apiHelpers'
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useLang()
   const [credits, setCredits] = useState([])
   const [score, setScore] = useState(null)
   const [savingsTotal, setSavingsTotal] = useState({ usd: 0, cdf: 0 })
@@ -59,42 +61,42 @@ export default function Dashboard() {
   const globalScore = score?.score_client ?? 0
 
   return (
-    <DashboardLayout title="Tableau de bord">
+    <DashboardLayout title={t('dash.page_title')}>
       <div className="flex flex-col gap-6">
-        {loading && <p className="text-sm text-muted">Chargement des données…</p>}
+        {loading && <p className="text-sm text-muted">{t('dash.loading')}</p>}
 
         <div
           className="neu-flat p-6 flex items-center justify-between"
-          style={{ background: 'linear-gradient(145deg, #1a1a1a, #141414)' }}
+          style={{ background: 'linear-gradient(145deg, var(--color-panel), var(--color-surface))' }}
         >
           <div>
-            <p className="text-muted text-sm">Bienvenue,</p>
+            <p className="text-muted text-sm">{t('dash.welcome')}</p>
             <h2 className="font-display font-bold text-2xl text-blanc">{user?.name}</h2>
             <div className="flex items-center gap-2 mt-2">
               {kycValid ? (
                 <>
                   <CheckCircle size={14} className="text-success" />
-                  <span className="text-xs text-success">KYC validé</span>
+                  <span className="text-xs text-success">{t('dash.kyc_valid')}</span>
                 </>
               ) : (
                 <>
                   <AlertTriangle size={14} className="text-warning" />
-                  <span className="text-xs text-warning">KYC en attente — complétez votre profil</span>
+                  <span className="text-xs text-warning">{t('dash.kyc_pending')}</span>
                 </>
               )}
             </div>
           </div>
-          <ScoreRing score={Math.round(globalScore)} size={100} label="Mon score" />
+          <ScoreRing score={Math.round(globalScore)} size={100} label={t('dash.my_score')} />
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Épargne USD" value={formatMoney(savingsTotal.usd, 'USD')} sub="Comptes actifs" icon={PiggyBank} accentColor="#D4AF37" />
-          <StatCard label="Épargne CDF" value={formatMoney(savingsTotal.cdf, 'CDF')} sub="Comptes actifs" icon={PiggyBank} accentColor="#34D399" />
-          <StatCard label="Score global" value={`${globalScore}/100`} sub="Moyenne USD + CDF" icon={TrendingUp} accentColor="#A78BFA" />
+          <StatCard label={t('dash.savings_usd')} value={formatMoney(savingsTotal.usd, 'USD')} sub={t('dash.active_accounts')} icon={PiggyBank} accentColor="#D4AF37" />
+          <StatCard label={t('dash.savings_cdf')} value={formatMoney(savingsTotal.cdf, 'CDF')} sub={t('dash.active_accounts')} icon={PiggyBank} accentColor="#34D399" />
+          <StatCard label={t('dash.global_score')} value={`${globalScore}/100`} sub={t('dash.avg_currencies')} icon={TrendingUp} accentColor="#A78BFA" />
           <StatCard
-            label="Crédit en cours"
+            label={t('dash.active_credit')}
             value={activeCredit ? formatMoney(activeCredit.credit?.solde_restant, activeCredit.devise) : '—'}
-            sub={activeCredit ? activeCredit.devise : 'Aucun'}
+            sub={activeCredit ? activeCredit.devise : t('dash.none')}
             icon={CreditCard}
             accentColor="#60A5FA"
           />
@@ -103,13 +105,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 neu-flat p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-blanc">Historique des crédits</h3>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/my-credits')}>Voir tout →</Button>
+              <h3 className="font-display font-bold text-blanc">{t('dash.credit_history')}</h3>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/my-credits')}>{t('action.see_all')}</Button>
             </div>
 
             <div className="flex flex-col gap-3">
               {recentCredits.length === 0 && (
-                <p className="text-sm text-muted">Aucune demande de crédit pour le moment.</p>
+                <p className="text-sm text-muted">{t('dash.no_credits')}</p>
               )}
               {recentCredits.map(c => (
                 <div key={c.demande_id} className="neu-sm p-4 flex items-center justify-between">
@@ -119,7 +121,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-blanc">#{c.demande_id} · {c.devise}</p>
-                      <p className="text-xs text-muted">{c.duree_mois} mois</p>
+                      <p className="text-xs text-muted">{c.duree_mois} {t('label.months')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -131,18 +133,18 @@ export default function Dashboard() {
             </div>
 
             <Button variant="secondary" size="md" className="self-start" onClick={() => navigate('/credit-request')}>
-              + Nouvelle demande
+              {t('action.new_request')}
             </Button>
           </div>
 
           <div className="flex flex-col gap-4">
             <div className="neu-flat p-5 flex flex-col gap-3">
-              <h3 className="font-display font-bold text-blanc text-sm">Actions rapides</h3>
+              <h3 className="font-display font-bold text-blanc text-sm">{t('dash.quick_actions')}</h3>
               {[
-                { label: 'Demander un crédit', to: '/credit-request', icon: CreditCard, color: '#D4AF37' },
-                { label: 'Épargner maintenant', to: '/savings', icon: PiggyBank, color: '#34D399' },
-                { label: 'Voir mon scoring', to: '/scoring', icon: TrendingUp, color: '#A78BFA' },
-                { label: 'Explications IA', to: '/ai-explanations', icon: Sparkles, color: '#60A5FA' },
+                { label: t('dash.request_credit'), to: '/credit-request', icon: CreditCard, color: '#D4AF37' },
+                { label: t('dash.save_now'), to: '/savings', icon: PiggyBank, color: '#34D399' },
+                { label: t('dash.view_score'), to: '/scoring', icon: TrendingUp, color: '#A78BFA' },
+                { label: t('nav.ai'), to: '/ai-explanations', icon: Sparkles, color: '#60A5FA' },
               ].map(a => (
                 <button
                   key={a.to}
@@ -161,17 +163,17 @@ export default function Dashboard() {
               <div className="neu-flat p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle size={16} className="text-warning" />
-                  <h3 className="font-bold text-blanc text-sm">Crédit en cours</h3>
+                  <h3 className="font-bold text-blanc text-sm">{t('dash.active_loan')}</h3>
                 </div>
                 <p className="text-2xl font-display font-bold text-or-light">
                   {formatMoney(activeCredit.credit.mensualite, activeCredit.devise)}
                 </p>
                 <p className="text-xs text-muted mt-1">
-                  Mensualité · Solde {formatMoney(activeCredit.credit.solde_restant, activeCredit.devise)}
+                  {t('dash.monthly_payment')} · {t('dash.remaining_balance')} {formatMoney(activeCredit.credit.solde_restant, activeCredit.devise)}
                 </p>
                 <div className="mt-3">
                   <Button size="sm" className="w-full" onClick={() => navigate('/repayments')}>
-                    Rembourser
+                    {t('action.repay')}
                   </Button>
                 </div>
               </div>

@@ -6,6 +6,7 @@ class SavingsAccount {
     required this.solde,
     required this.objectifMontant,
     required this.objectifDescription,
+    required this.objectifPeriodicite,
     required this.progressionPct,
   });
 
@@ -15,6 +16,7 @@ class SavingsAccount {
   final double solde;
   final double? objectifMontant;
   final String objectifDescription;
+  final String objectifPeriodicite;
   final double progressionPct;
 
   double get goal => objectifMontant ?? 0;
@@ -30,6 +32,7 @@ class SavingsAccount {
           ? double.tryParse(json['objectif_montant'].toString())
           : null,
       objectifDescription: json['objectif_description'] as String? ?? '',
+      objectifPeriodicite: json['objectif_periodicite'] as String? ?? 'mensuel',
       progressionPct: (json['progression_pct'] as num?)?.toDouble() ?? 0,
     );
   }

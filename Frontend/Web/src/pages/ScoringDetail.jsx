@@ -6,25 +6,27 @@ import ScoringPanel from '@/components/organisms/ScoringPanel'
 import Button from '@/components/atoms/Button'
 import { BarChart2, Info, Search, RefreshCw } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useLang } from '@/context/LangContext'
 import { ROLES } from '@/constants/roles'
 import { getMyScore, getScoringDetail, triggerScoring } from '@/api/scoring'
 
 export default function ScoringDetail() {
   const { user } = useAuth()
+  const { t } = useLang()
   const [searchParams, setSearchParams] = useSearchParams()
   const isClient = user?.role === ROLES.CLIENT
-  const title = isClient ? 'Mon score (XAI)' : 'Scoring détaillé (XAI)'
+  const title = isClient ? t('score.page_title_client') : t('score.page_title_agent')
   const [data, setData] = useState(null)
   const [demandeId, setDemandeId] = useState(searchParams.get('demande_id') || '')
   const [loading, setLoading] = useState(false)
   const [triggering, setTriggering] = useState(false)
 
   const handleTrigger = async () => {
-    if (!demandeId) { toast.error('Saisissez un ID de demande.'); return }
+    if (!demandeId) { toast.error(t('score.enter_id')); return }
     setTriggering(true)
     try {
       await triggerScoring(demandeId)
-      toast.success('Scoring relancé — rechargez dans quelques secondes.')
+      toast.success(t('score.relaunch_ok'))
     } catch (err) {
       toast.error(err.message)
     } finally {

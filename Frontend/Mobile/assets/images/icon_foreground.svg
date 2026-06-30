@@ -1,0 +1,37 @@
+<!-- Adaptive icon foreground (Android 8+) — S sur fond transparent, safe zone = 66% central -->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="512" y1="220" x2="512" y2="804" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#F8E070"/>
+      <stop offset="40%"  stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#7A5200"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- S centered in safe zone (scaled ~80% to fit within the 66% safe area) -->
+  <path d="M 400,262
+           C 400,180 624,180 624,304
+           C 624,408 400,432 400,512
+           C 400,604 624,618 624,720"
+        fill="none"
+        stroke="url(#gold)"
+        stroke-width="100"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        opacity="0.25"
+        filter="url(#glow)"/>
+
+  <path d="M 400,262
+           C 400,180 624,180 624,304
+           C 624,408 400,432 400,512
+           C 400,604 624,618 624,720"
+        fill="none"
+        stroke="url(#gold)"
+        stroke-width="76"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,68 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E1E1E"/>
+      <stop offset="100%" stop-color="#080808"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="512" y1="160" x2="512" y2="864" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#F8E070"/>
+      <stop offset="40%"  stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#7A5200"/>
+    </linearGradient>
+    <linearGradient id="goldShine" x1="300" y1="200" x2="700" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="50%"  stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="iconClip">
+      <rect width="1024" height="1024" rx="230" ry="230"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="230" ry="230" fill="url(#bgGrad)"/>
+
+  <!-- Inner shine top-left -->
+  <rect width="1024" height="1024" rx="230" ry="230" fill="url(#goldShine)" clip-path="url(#iconClip)"/>
+
+  <!-- Border ring -->
+  <rect width="1024" height="1024" rx="230" ry="230"
+        fill="none" stroke="#D4AF37" stroke-width="3" opacity="0.18"/>
+
+  <!-- S glow (blurred, wider stroke) -->
+  <path d="M 362,242
+           C 362,136 662,136 662,288
+           C 662,412 362,440 362,536
+           C 362,650 662,668 662,782"
+        fill="none"
+        stroke="url(#gold)"
+        stroke-width="130"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        opacity="0.28"
+        filter="url(#glow)"/>
+
+  <!-- S main stroke -->
+  <path d="M 362,242
+           C 362,136 662,136 662,288
+           C 662,412 362,440 362,536
+           C 362,650 662,668 662,782"
+        fill="none"
+        stroke="url(#gold)"
+        stroke-width="92"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        filter="url(#softglow)"/>
+
+  <!-- Accent: two small diamond dots at terminals -->
+  <circle cx="362" cy="242" r="22" fill="#F8E070" opacity="0.6"/>
+  <circle cx="662" cy="782" r="22" fill="#8B6E09" opacity="0.7"/>
+</svg>

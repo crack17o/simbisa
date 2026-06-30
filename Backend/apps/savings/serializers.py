@@ -11,7 +11,7 @@ class CompteEpargneSerializer(serializers.ModelSerializer):
         model = CompteEpargne
         fields = [
             'id', 'devise', 'symbole', 'solde', 'objectif_montant', 'objectif_description',
-            'date_objectif', 'is_active', 'date_creation', 'progression_pct',
+            'objectif_periodicite', 'date_objectif', 'is_active', 'date_creation', 'progression_pct',
         ]
         read_only_fields = ['id', 'solde', 'date_creation', 'progression_pct']
 
