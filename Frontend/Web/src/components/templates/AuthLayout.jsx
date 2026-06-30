@@ -7,8 +7,8 @@ export default function AuthLayout({ children }) {
       <div
         className="hidden lg:flex flex-col justify-between w-2/5 p-12"
         style={{
-          background: 'linear-gradient(160deg, #0f0f0f 0%, #1a1a1a 100%)',
-          borderRight: '1px solid rgba(212,175,55,0.1)',
+          background: 'linear-gradient(160deg, var(--color-noir) 0%, var(--color-panel) 100%)',
+          borderRight: '1px solid rgba(212,175,55,0.15)',
         }}
       >
         <Logo size="lg" />

@@ -26,21 +26,28 @@ class NeuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final widget = Container(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = color ?? (isDark ? SimbisaColors.panel : SimbisaLightColors.panel);
+    final fgColor = isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc;
+
+    final container = Container(
       padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color ?? SimbisaColors.panel,
+        color: gradient != null ? null : bgColor,
         gradient: gradient,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: shadows ?? NeuShadow.flat(),
+        boxShadow: shadows ?? NeuShadow.flatAdaptive(context),
       ),
-      child: child,
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: fgColor),
+        child: child,
+      ),
     );
 
     if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: widget);
+      return GestureDetector(onTap: onTap, child: container);
     }
-    return widget;
+    return container;
   }
 }
 
@@ -54,12 +61,13 @@ class NeuInset extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: SimbisaColors.surface,
+        color: isDark ? SimbisaColors.surface : SimbisaLightColors.surface,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: NeuShadow.inset(),
+        boxShadow: NeuShadow.insetAdaptive(context),
       ),
       child: child,
     );
@@ -105,6 +113,10 @@ class _NeuButtonState extends State<NeuButton> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryBg   = isDark ? SimbisaColors.panel : SimbisaLightColors.panel;
+    final secondaryText = isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc;
+
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) { _ctrl.reverse(); widget.onTap?.call(); },
@@ -116,13 +128,13 @@ class _NeuButtonState extends State<NeuButton> with SingleTickerProviderStateMix
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           decoration: BoxDecoration(
             gradient: widget.gold && !widget.secondary ? SimbisaColors.goldGradient : null,
-            color: widget.secondary ? SimbisaColors.panel : null,
+            color: widget.secondary ? secondaryBg : null,
             borderRadius: BorderRadius.circular(16),
             boxShadow: widget.gold && !widget.secondary
                 ? NeuShadow.goldGlow()
-                : NeuShadow.flat(),
+                : NeuShadow.flatAdaptive(context),
             border: widget.secondary
-                ? Border.all(color: SimbisaColors.or.withOpacity(0.2))
+                ? Border.all(color: SimbisaColors.or.withValues(alpha: 0.2))
                 : null,
           ),
           child: Center(
@@ -141,7 +153,7 @@ class _NeuButtonState extends State<NeuButton> with SingleTickerProviderStateMix
                       fontWeight: FontWeight.w700,
                       color: widget.gold && !widget.secondary
                           ? SimbisaColors.noir
-                          : SimbisaColors.blanc,
+                          : secondaryText,
                     ),
                     child: widget.child,
                   ),
@@ -179,30 +191,35 @@ class NeuTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor   = isDark ? SimbisaColors.blanc  : SimbisaLightColors.blanc;
+    final mutedColor  = isDark ? SimbisaColors.muted  : SimbisaLightColors.muted;
+    final bgColor     = isDark ? SimbisaColors.surface : SimbisaLightColors.surface;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label != null) ...[
-          Text(label!.toUpperCase(), style: SimbisaText.label()),
+          Text(label!.toUpperCase(), style: SimbisaText.label(color: mutedColor)),
           const SizedBox(height: 8),
         ],
         Container(
           decoration: BoxDecoration(
-            color: SimbisaColors.surface,
+            color: bgColor,
             borderRadius: BorderRadius.circular(14),
-            boxShadow: NeuShadow.inset(),
+            boxShadow: NeuShadow.insetAdaptive(context),
           ),
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
             obscureText: obscureText,
             onChanged: onChanged,
-            style: SimbisaText.body(14),
+            style: SimbisaText.body(14, color: textColor),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: SimbisaText.body(14, color: SimbisaColors.muted.withOpacity(0.5)),
+              hintStyle: SimbisaText.body(14, color: mutedColor.withValues(alpha: 0.5)),
               prefixIcon: prefixIcon != null
-                  ? IconTheme(data: const IconThemeData(color: SimbisaColors.muted, size: 18), child: prefixIcon!)
+                  ? IconTheme(data: IconThemeData(color: mutedColor, size: 18), child: prefixIcon!)
                   : null,
               suffixIcon: suffixIcon,
               border: InputBorder.none,
@@ -409,12 +426,13 @@ class NeuProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: SimbisaColors.surface,
+        color: isDark ? SimbisaColors.surface : SimbisaLightColors.surface,
         borderRadius: BorderRadius.circular(height),
-        boxShadow: NeuShadow.inset(blur: 6, offset: 3),
+        boxShadow: NeuShadow.insetAdaptive(context, blur: 6, offset: 3),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(height),
@@ -444,14 +462,17 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc;
+    final orColor    = isDark ? SimbisaColors.or    : SimbisaLightColors.or;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+        Text(title, style: TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700, color: titleColor)),
         if (action != null)
           GestureDetector(
             onTap: onAction,
-            child: Text(action!, style: SimbisaText.body(12, color: SimbisaColors.or)),
+            child: Text(action!, style: SimbisaText.body(12, color: orColor)),
           ),
       ],
     );

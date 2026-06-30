@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simbisa/core/constants/routes.dart';
@@ -26,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _loading = false;
   bool _loadingCommunes = true;
+  bool _accepted = false;
   String? _selectedCommune;
   String? _mmHint;
   List<CommuneOption> _communes = [];
@@ -97,6 +99,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       showToastError(context, 'Les mots de passe ne correspondent pas.');
       return;
     }
+    if (!_accepted) {
+      showToastError(context, "Acceptez la politique de confidentialité et les conditions d'utilisation.");
+      return;
+    }
 
     final email = _emailCtrl.text.trim();
     if (email.isNotEmpty && !email.contains('@')) {
@@ -134,8 +140,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final mutedColor = isDark ? SimbisaColors.muted : SimbisaLightColors.muted;
+    final orColor    = isDark ? SimbisaColors.or    : SimbisaLightColors.or;
+
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(title: const Text('Créer un compte')),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -242,17 +251,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: true,
                 ),
                 const SizedBox(height: 20),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Checkbox(
+                      value: _accepted,
+                      onChanged: (v) => setState(() => _accepted = v ?? false),
+                      activeColor: orColor,
+                      checkColor: SimbisaColors.noir,
+                      side: BorderSide(color: mutedColor.withValues(alpha: 0.5)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
+                          style: SimbisaText.body(12, color: mutedColor),
+                          children: [
+                            const TextSpan(text: "J'accepte la "),
+                            TextSpan(
+                              text: 'politique de confidentialité',
+                              style: SimbisaText.body(12, color: orColor),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => context.push(AppRoutes.privacy),
+                            ),
+                            const TextSpan(text: ' et les '),
+                            TextSpan(
+                              text: "conditions d'utilisation",
+                              style: SimbisaText.body(12, color: orColor),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => context.push(AppRoutes.terms),
+                            ),
+                            const TextSpan(text: ' de Simbisa.'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 NeuButton(
                   width: double.infinity,
                   loading: _loading,
-                  onTap: _register,
+                  onTap: _accepted ? _register : null,
                   child: const Text('Créer mon compte'),
                 ),
                 const SizedBox(height: 14),
                 Center(
                   child: GestureDetector(
                     onTap: () => context.go(AppRoutes.login),
-                    child: Text('Déjà inscrit ? Se connecter', style: SimbisaText.body(12, color: SimbisaColors.or)),
+                    child: Text('Déjà inscrit ? Se connecter', style: SimbisaText.body(12, color: orColor)),
                   ),
                 ),
               ],

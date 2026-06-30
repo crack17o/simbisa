@@ -18,6 +18,7 @@ export default function Register() {
     commune_kinshasa: '', password: '', password_confirm: '',
   })
   const [loading, setLoading] = useState(false)
+  const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
     listCommunes()
@@ -37,6 +38,10 @@ export default function Register() {
     }
     if (form.password.length < 8) {
       toast.error('Mot de passe minimum : 8 caractères.')
+      return
+    }
+    if (!accepted) {
+      toast.error("Veuillez accepter la politique de confidentialité et les conditions d'utilisation.")
       return
     }
     setLoading(true)
@@ -101,7 +106,28 @@ export default function Register() {
           <FormField label="Confirmer le mot de passe" type="password" icon={Lock} value={form.password_confirm}
             onChange={e => setForm(p => ({ ...p, password_confirm: e.target.value }))} required />
 
-          <Button type="submit" size="xl" loading={loading}>Créer mon compte</Button>
+          <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--border-subtle)' }}>
+            <input
+              id="accept-legal"
+              type="checkbox"
+              checked={accepted}
+              onChange={e => setAccepted(e.target.checked)}
+              className="mt-0.5 w-4 h-4 flex-shrink-0 cursor-pointer accent-or"
+            />
+            <label htmlFor="accept-legal" className="text-xs leading-relaxed cursor-pointer" style={{ color: 'var(--color-muted)' }}>
+              J&apos;ai lu et j&apos;accepte la{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-or hover:text-or-light underline underline-offset-2">
+                politique de confidentialité
+              </a>
+              {' '}et les{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-or hover:text-or-light underline underline-offset-2">
+                conditions d&apos;utilisation
+              </a>
+              {' '}de Simbisa.
+            </label>
+          </div>
+
+          <Button type="submit" size="xl" loading={loading} disabled={!accepted}>Créer mon compte</Button>
         </form>
 
         <button type="button" onClick={() => navigate('/login')} className="text-sm text-or hover:text-or-light">

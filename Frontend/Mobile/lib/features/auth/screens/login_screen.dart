@@ -78,7 +78,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,

@@ -47,6 +47,8 @@ class SimbisaColors {
 class NeuShadow {
   static const dark  = Color(0xFF050505);
   static const light = Color(0xFF232323);
+  static const _lightDark  = Color(0xFFC8C8C4);
+  static const _lightLight = Color(0xFFFFFFFF);
 
   static List<BoxShadow> flat({double blur = 14, double offset = 6}) => [
     BoxShadow(color: dark,  blurRadius: blur, offset: Offset(offset, offset)),
@@ -59,6 +61,24 @@ class NeuShadow {
   ];
 
   static List<BoxShadow> sm() => flat(blur: 8, offset: 3);
+
+  static List<BoxShadow> flatAdaptive(BuildContext context, {double blur = 14, double offset = 6}) {
+    if (Theme.of(context).brightness == Brightness.dark) return flat(blur: blur, offset: offset);
+    return [
+      BoxShadow(color: _lightDark,  blurRadius: blur, offset: Offset(offset, offset)),
+      BoxShadow(color: _lightLight, blurRadius: blur, offset: Offset(-offset, -offset)),
+    ];
+  }
+
+  static List<BoxShadow> insetAdaptive(BuildContext context, {double blur = 10, double offset = 4}) {
+    if (Theme.of(context).brightness == Brightness.dark) return inset(blur: blur, offset: offset);
+    return [
+      BoxShadow(color: _lightDark,  blurRadius: blur, offset: Offset(offset, offset)),
+      BoxShadow(color: _lightLight, blurRadius: blur, offset: Offset(-offset, -offset)),
+    ];
+  }
+
+  static List<BoxShadow> smAdaptive(BuildContext context) => flatAdaptive(context, blur: 8, offset: 3);
 
   static List<BoxShadow> goldGlow() => [
     ...flat(),
