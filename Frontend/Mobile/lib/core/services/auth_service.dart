@@ -176,6 +176,10 @@ class AuthService {
     await _api.post('auth/mfa/verify/', body: {'otp_token': otpToken});
   }
 
+  Future<void> mfaDisable(String password) async {
+    await _api.post('auth/mfa/disable/', body: {'password': password});
+  }
+
   Future<SessionUser?> restoreSession() async {
     if (!await _storage.hasValidTokens()) return null;
 

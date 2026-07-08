@@ -16,6 +16,7 @@ class LocalStorage {
   static const _mmOperatorCodeKey = 'mm_operator_code';
   static const _mmOperatorLabelKey = 'mm_operator_label';
   static const _mmServiceNameKey = 'mm_service_name';
+  static const _mfaEnabledKey = 'user_mfa_enabled';
 
   Future<void> saveTokens({required String access, required String refresh}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -49,6 +50,8 @@ class LocalStorage {
       await prefs.setString(_emailKey, user.email!);
     }
 
+    await prefs.setBool(_mfaEnabledKey, user.mfaEnabled);
+
     if (op != null) {
       await prefs.setString(_mmOperatorCodeKey, op.code);
       await prefs.setString(_mmOperatorLabelKey, op.label);
@@ -81,6 +84,7 @@ class LocalStorage {
       roleName: prefs.getString(_roleNameKey) ?? 'Client',
       email: prefs.getString(_emailKey),
       communeKinshasa: prefs.getString(_communeKey),
+      mfaEnabled: prefs.getBool(_mfaEnabledKey) ?? false,
       mobileMoneyOperator: operator ?? MobileMoneyOperator.fromPhone(telephone),
     );
   }

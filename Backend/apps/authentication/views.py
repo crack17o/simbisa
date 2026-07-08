@@ -254,6 +254,33 @@ def mfa_verify_view(request):
     return Response({'success': True, 'message': 'Authentification à deux facteurs activée par e-mail.'})
 
 
+@extend_schema(tags=['MFA'])
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mfa_disable_view(request):
+    user = request.user
+    if not user.mfa_enabled:
+        return Response({
+            'success': False,
+            'error': {'message': 'Le MFA n\'est pas activé sur ce compte.'},
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    password = request.data.get('password', '')
+    if not password or not user.check_password(password):
+        return Response({
+            'success': False,
+            'error': {'code': 'invalid_password', 'message': 'Mot de passe incorrect.'},
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    user.mfa_enabled = False
+    user.mfa_verified = False
+    user.mfa_secret = ''
+    user.save(update_fields=['mfa_enabled', 'mfa_verified', 'mfa_secret'])
+    logger.info(f"MFA désactivé : {user.telephone}")
+
+    return Response({'success': True, 'message': 'Authentification à deux facteurs désactivée.'})
+
+
 @extend_schema(tags=['Authentication'])
 @api_view(['POST'])
 @permission_classes([AllowAny])

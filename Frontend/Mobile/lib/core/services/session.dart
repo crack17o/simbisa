@@ -8,6 +8,7 @@ class SessionUser {
     required this.roleName,
     this.email,
     this.communeKinshasa,
+    this.mfaEnabled = false,
     MobileMoneyOperator? mobileMoneyOperator,
   }) : mobileMoneyOperator = mobileMoneyOperator ?? MobileMoneyOperator.fromPhone(telephone);
 
@@ -17,6 +18,7 @@ class SessionUser {
   final String roleName;
   final String? email;
   final String? communeKinshasa;
+  final bool mfaEnabled;
   final MobileMoneyOperator? mobileMoneyOperator;
 
   String get mobileMoneyDescription =>
@@ -31,6 +33,7 @@ class SessionUser {
       roleName: json['role_name'] as String? ?? 'Client',
       email: json['email'] as String?,
       communeKinshasa: json['commune_kinshasa'] as String?,
+      mfaEnabled: json['mfa_enabled'] as bool? ?? false,
       mobileMoneyOperator: MobileMoneyOperator.fromPhone(telephone),
     );
   }

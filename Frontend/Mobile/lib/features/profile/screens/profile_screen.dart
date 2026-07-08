@@ -69,6 +69,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _mfaLoading = false;
   String _mfaSentTo = '';
   bool _mfaEnabled = false;
+  bool _mfaDisableOpen = false;
+  final _mfaDisablePwdCtrl = TextEditingController();
 
   // Change password
   final _oldPwdCtrl = TextEditingController();
@@ -79,6 +81,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _mfaEnabled = Session.current?.mfaEnabled ?? false;
     _load();
   }
 
@@ -90,6 +93,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _kycNumeroCtrl.dispose();
     _kycExpirationCtrl.dispose();
     _mfaCodeCtrl.dispose();
+    _mfaDisablePwdCtrl.dispose();
     _oldPwdCtrl.dispose();
     _newPwdCtrl.dispose();
     _newPwd2Ctrl.dispose();
@@ -196,6 +200,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _mfaEnabled = true);
         _mfaCodeCtrl.clear();
         showToast(context, 'MFA activé.');
+      }
+    } on ApiException catch (e) {
+      if (mounted) showToastError(context, e.message);
+    } finally {
+      if (mounted) setState(() => _mfaLoading = false);
+    }
+  }
+
+  Future<void> _disableMfa() async {
+    if (_mfaDisablePwdCtrl.text.isEmpty) {
+      showToastError(context, 'Mot de passe requis.');
+      return;
+    }
+    setState(() => _mfaLoading = true);
+    try {
+      await _auth.mfaDisable(_mfaDisablePwdCtrl.text);
+      if (mounted) {
+        setState(() {
+          _mfaEnabled = false;
+          _mfaDisableOpen = false;
+          _mfaSentTo = '';
+        });
+        _mfaDisablePwdCtrl.clear();
+        showToast(context, 'MFA désactivé.');
       }
     } on ApiException catch (e) {
       if (mounted) showToastError(context, e.message);
@@ -591,15 +619,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 8),
           Text('Chaque connexion enverra un code OTP à votre e-mail.', style: SimbisaText.body(12, color: SimbisaColors.muted)),
           const SizedBox(height: 14),
-          if (_mfaEnabled)
+          if (_mfaEnabled) ...[
             Row(
               children: [
                 const Icon(Icons.check_circle_rounded, color: SimbisaColors.success, size: 16),
                 const SizedBox(width: 8),
                 Text('MFA activé — OTP requis à chaque connexion.', style: SimbisaText.body(13, color: SimbisaColors.success)),
               ],
-            )
-          else ...[
+            ),
+            const SizedBox(height: 14),
+            if (!_mfaDisableOpen)
+              NeuButton(
+                width: double.infinity,
+                gold: false,
+                secondary: true,
+                onTap: () => setState(() => _mfaDisableOpen = true),
+                child: const Text('Désactiver le MFA'),
+              )
+            else ...[
+              NeuTextField(
+                label: 'Mot de passe',
+                hint: '••••••••',
+                prefixIcon: const Icon(Icons.lock_outline),
+                controller: _mfaDisablePwdCtrl,
+                obscureText: true,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: NeuButton(
+                      gold: false,
+                      secondary: true,
+                      onTap: () {
+                        setState(() => _mfaDisableOpen = false);
+                        _mfaDisablePwdCtrl.clear();
+                      },
+                      child: const Text('Annuler'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: NeuButton(
+                      loading: _mfaLoading,
+                      onTap: _disableMfa,
+                      child: const Text('Confirmer'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ] else ...[
             if (_mfaSentTo.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),

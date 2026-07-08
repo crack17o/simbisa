@@ -10,7 +10,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { useLang } from '@/context/LangContext'
 import { LANGS } from '@/lib/i18n'
 import { getMyProfile, updateMyProfile, submitKyc } from '@/api/clients'
-import { mfaSetupApi, mfaVerifyApi, changePasswordApi } from '@/api/auth'
+import { mfaSetupApi, mfaVerifyApi, mfaDisableApi, changePasswordApi } from '@/api/auth'
 import { KYC_TYPE_MAP } from '@/constants/roles'
 
 const KYC_TYPES = Object.keys(KYC_TYPE_MAP)
@@ -30,6 +30,8 @@ export default function Profile() {
   const [mfaSentTo, setMfaSentTo] = useState('')
   const [mfaLoading, setMfaLoading] = useState(false)
   const [mfaEnabled, setMfaEnabled] = useState(false)
+  const [mfaDisableOpen, setMfaDisableOpen] = useState(false)
+  const [mfaDisablePwd, setMfaDisablePwd] = useState('')
   const [pwd, setPwd] = useState({ old_password: '', new_password: '', new_password_confirm: '' })
   const [pwdLoading, setPwdLoading] = useState(false)
 
@@ -71,6 +73,23 @@ export default function Profile() {
       toast.success(res.message || 'MFA activé.')
       setMfaEnabled(true)
       setMfaCode('')
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setMfaLoading(false)
+    }
+  }
+
+  const handleMfaDisable = async (e) => {
+    e.preventDefault()
+    if (!mfaDisablePwd) { toast.error('Mot de passe requis.'); return }
+    setMfaLoading(true)
+    try {
+      const res = await mfaDisableApi(mfaDisablePwd)
+      toast.success(res.message || 'MFA désactivé.')
+      setMfaEnabled(false)
+      setMfaDisableOpen(false)
+      setMfaDisablePwd('')
     } catch (err) {
       toast.error(err.message)
     } finally {
@@ -217,7 +236,36 @@ export default function Profile() {
               <Button type="submit" loading={mfaLoading}>Activer MFA</Button>
             </form>
           ) : (
-            <p className="text-sm text-success">MFA activé — OTP requis à chaque connexion.</p>
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-success">MFA activé — OTP requis à chaque connexion.</p>
+              {!mfaDisableOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setMfaDisableOpen(true)}
+                  className="self-start text-xs text-muted underline underline-offset-2 hover:text-blanc transition-colors"
+                >
+                  Désactiver le MFA
+                </button>
+              ) : (
+                <form onSubmit={handleMfaDisable} className="flex flex-col sm:flex-row gap-3 items-end">
+                  <div className="flex-1 w-full">
+                    <FormField
+                      label="Confirmez votre mot de passe"
+                      type="password"
+                      value={mfaDisablePwd}
+                      onChange={e => setMfaDisablePwd(e.target.value)}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <Button type="button" variant="secondary" onClick={() => { setMfaDisableOpen(false); setMfaDisablePwd('') }}>
+                    Annuler
+                  </Button>
+                  <Button type="submit" loading={mfaLoading} variant="danger">
+                    Confirmer
+                  </Button>
+                </form>
+              )}
+            </div>
           )}
         </div>
 
