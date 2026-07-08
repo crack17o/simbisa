@@ -103,7 +103,8 @@ class Command(BaseCommand):
         Client.objects.all().delete()
         # Supprimer tous les utilisateurs sauf superusers Django
         deleted, _ = Utilisateur.objects.filter(is_superuser=False).delete()
-        Role.objects.all().delete()
+        # Les rôles ne sont pas supprimés : les superusers les référencent (FK protégée)
+        # _seed_roles() utilise get_or_create, donc c'est idempotent
         VectorDocument.objects.all().delete()
 
         self.stdout.write(self.style.WARNING(f'  {deleted} utilisateur(s) non-superuser supprimé(s).'))
