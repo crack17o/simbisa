@@ -1,3 +1,6 @@
+# Fichiers verrous Office (temporaires, ne pas committer)
+~$*
+
 # Secrets — ne jamais committer
 .env
 .env.*
