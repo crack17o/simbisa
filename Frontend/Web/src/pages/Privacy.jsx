@@ -46,7 +46,7 @@ export default function Privacy() {
     <div className="min-h-screen bg-surface text-blanc">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <button
-          onClick={() => navigate(isAuthenticated ? -1 : '/login')}
+          onClick={() => window.history.length <= 1 ? window.close() : navigate(-1)}
           className="flex items-center gap-2 text-muted hover:text-or transition-colors mb-8 text-sm"
         >
           <ArrowLeft size={16} />
