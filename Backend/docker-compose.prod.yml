@@ -50,7 +50,7 @@ services:
           --max-requests 1000 \
           --max-requests-jitter 100
     ports:
-      - "127.0.0.1:8000:8000"   # Accessible uniquement depuis localhost (nginx hôte)
+      - "8000:8000"   # Accès externe bloqué par UFW (voir doc déploiement)
     volumes:
       - media_files:/app/media
       - logs_data:/app/logs
