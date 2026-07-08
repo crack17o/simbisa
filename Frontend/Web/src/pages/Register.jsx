@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Phone, Lock, User, Mail, MapPin, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Phone, Lock, User, Mail, MapPin, ArrowRight, ArrowLeft, Briefcase, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import AuthLayout from '@/components/templates/AuthLayout'
 import FormField from '@/components/molecules/FormField'
@@ -58,6 +58,7 @@ export default function Register() {
   const [form, setForm] = useState({
     telephone: '', nom: '', postnom: '', prenom: '', email: '',
     commune_kinshasa: '', password: '', password_confirm: '',
+    adresse: '', profession: '', date_naissance: '',
   })
   const [loading, setLoading] = useState(false)
   const [accepted, setAccepted] = useState(false)
@@ -159,6 +160,15 @@ export default function Register() {
 
             <FormField label="Email (recommandé)" type="email" icon={Mail} value={form.email}
               onChange={set('email')} />
+
+            <FormField label="Profession" icon={Briefcase} value={form.profession}
+              onChange={set('profession')} />
+
+            <FormField label="Adresse" icon={MapPin} value={form.adresse}
+              onChange={set('adresse')} />
+
+            <FormField label="Date de naissance" type="date" icon={Calendar} value={form.date_naissance}
+              onChange={set('date_naissance')} />
 
             <Button type="button" size="xl" icon={ArrowRight} onClick={handleNext}>
               Continuer

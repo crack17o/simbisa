@@ -184,6 +184,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+# Mettre True sur VPS sans Nginx devant pour que Django serve /media/ directement
+SERVE_MEDIA_DJANGO = config('SERVE_MEDIA_DJANGO', default=False, cast=bool)
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -276,10 +278,6 @@ USSD_SIMULATOR_ENABLED = config('USSD_SIMULATOR_ENABLED', default=DEBUG, cast=bo
 USSD_DEFAULT_PIN = config('USSD_DEFAULT_PIN', default='0000')
 USSD_CALLBACK_SECRET = config('USSD_CALLBACK_SECRET', default='simulator-dev-secret')
 USSD_REQUIRE_SECRET = config('USSD_REQUIRE_SECRET', default=False, cast=bool)
-
-CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
-CLOUDINARY_API_KEY = config('CLOUDINARY_API_KEY', default='')
-CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET', default='')
 
 # E-mail (Gmail : mot de passe d'application Google, pas le mot de passe du compte)
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')

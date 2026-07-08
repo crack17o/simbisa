@@ -7,6 +7,15 @@ export const ROLES = {
   AUDITOR: 'Auditeur',
 }
 
+export const ROLE_COLORS = {
+  [ROLES.CLIENT]:  '#D4AF37',
+  [ROLES.AGENT]:   '#60A5FA',
+  [ROLES.MANAGER]: '#34D399',
+  [ROLES.ANALYST]: '#F59E0B',
+  [ROLES.ADMIN]:   '#EF4444',
+  [ROLES.AUDITOR]: '#A78BFA',
+}
+
 export const DEFAULT_ROUTE = {
   [ROLES.CLIENT]: '/dashboard',
   [ROLES.AGENT]: '/agent',

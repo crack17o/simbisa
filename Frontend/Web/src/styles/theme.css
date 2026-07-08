@@ -13,7 +13,7 @@
   --color-or-light:  #F0C040;
   --color-or-dark:   #A8861F;
   --color-blanc:     #F5F5F5;
-  --color-muted:     #9CA3AF;
+  --color-muted:     #A8B3BF;
   --color-success:   #22C55E;
   --color-warning:   #F59E0B;
   --color-danger:    #EF4444;
@@ -155,3 +155,13 @@ body {
 .delay-300 { animation-delay: 0.3s; }
 .delay-400 { animation-delay: 0.4s; }
 .delay-500 { animation-delay: 0.5s; }
+
+/* ── Accessibilité : respect du paramètre système ──────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-spin-slow,
+  .animate-blob,
+  .animate-pulse-gold {
+    animation: none;
+  }
+}

@@ -52,7 +52,8 @@ def score_pour_devise(client, devise: str) -> dict:
             source = 'demande'
 
     if score_global is None:
-        score_global = _score_profil_client(client, devise)
+        score_global = 0.0
+        source = 'aucun_historique'
 
     detail = {
         'devise': devise,

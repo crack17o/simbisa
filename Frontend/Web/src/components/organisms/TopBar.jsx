@@ -8,7 +8,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { useLang } from '@/context/LangContext'
 import { LANGS } from '@/lib/i18n'
 import { getNavItems, getRoleLabel } from '@/constants/navigation'
-import { ROLES } from '@/constants/roles'
+import { ROLES, ROLE_COLORS } from '@/constants/roles'
 import clsx from 'clsx'
 
 function normalize(str) {
@@ -118,10 +118,23 @@ export default function TopBar({ title, user }) {
           )}
         </div>
 
+        {user?.role && (
+          <span
+            className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold tracking-wide"
+            style={{
+              background: `${ROLE_COLORS[user.role] ?? '#D4AF37'}18`,
+              color: ROLE_COLORS[user.role] ?? '#D4AF37',
+            }}
+          >
+            {getRoleLabel(user.role)}
+          </span>
+        )}
+
         <button
           onClick={toggleTheme}
           className="w-9 h-9 rounded-xl flex items-center justify-center text-muted hover:text-or transition-colors neu-sm"
           title={theme === 'dark' ? t('ui.theme.light') : t('ui.theme.dark')}
+          aria-label={theme === 'dark' ? t('ui.theme.light') : t('ui.theme.dark')}
         >
           {theme === 'dark'
             ? <Sun size={16} />

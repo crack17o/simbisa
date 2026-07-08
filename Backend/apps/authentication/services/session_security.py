@@ -11,9 +11,23 @@ REASON_LABELS = {
     'mfa_policy': 'Politique MFA obligatoire pour les agents',
     'country_changed': 'Connexion depuis un nouveau pays',
     'device_changed': 'Nouvel appareil ou navigateur détecté',
+    'concurrent_session': 'Session active détectée sur un autre appareil',
 }
 
 AGENT_ROLES = ('Agent de crédit', 'Responsable crédit')
+
+
+def has_active_session(user) -> bool:
+    """Retourne True si l'utilisateur a au moins un refresh token actif (non expiré, non révoqué)."""
+    from django.utils import timezone
+    now = timezone.now()
+    outstanding = OutstandingToken.objects.filter(user=user, expires_at__gt=now)
+    if not outstanding.exists():
+        return False
+    blacklisted_ids = BlacklistedToken.objects.filter(
+        token__in=outstanding
+    ).values_list('token_id', flat=True)
+    return outstanding.exclude(id__in=blacklisted_ids).exists()
 
 
 def otp_required(user, ctx: dict) -> tuple[bool, list[str]]:
@@ -38,6 +52,9 @@ def otp_required(user, ctx: dict) -> tuple[bool, list[str]]:
 
     if user.last_device_id and ctx['device_id'] != user.last_device_id:
         reasons.append('device_changed')
+
+    if has_active_session(user):
+        reasons.append('concurrent_session')
 
     return bool(reasons), reasons
 

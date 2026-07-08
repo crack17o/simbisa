@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -63,6 +66,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _kycNumeroCtrl = TextEditingController();
   final _kycExpirationCtrl = TextEditingController();
   bool _submittingKyc = false;
+  PlatformFile? _kycFile;
+  bool _showReplaceForm = false;
 
   // MFA
   final _mfaCodeCtrl = TextEditingController();
@@ -130,17 +135,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _saveProfile() async {
     setState(() => _savingProfile = true);
+    final rawDate = _dateNaissanceCtrl.text.trim();
+    final isoDate = rawDate.isNotEmpty ? displayDateToIso(rawDate) : null;
+    if (rawDate.isNotEmpty && isoDate == null) {
+      showToastError(context, 'Date invalide — format attendu : JJ/MM/AAAA');
+      setState(() => _savingProfile = false);
+      return;
+    }
     try {
       await _clientService.updateProfile(
         profession: _professionCtrl.text.trim(),
         adresse: _adresseCtrl.text.trim(),
-        dateNaissance: _dateNaissanceCtrl.text.isNotEmpty ? _dateNaissanceCtrl.text : null,
+        dateNaissance: isoDate,
       );
       if (mounted) showToast(context, 'Profil enregistré.');
     } on ApiException catch (e) {
       if (mounted) showToastError(context, e.message);
     } finally {
       if (mounted) setState(() => _savingProfile = false);
+    }
+  }
+
+  Future<void> _pickKycFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      withData: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      setState(() => _kycFile = result.files.first);
     }
   }
 
@@ -153,17 +176,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       showToastError(context, 'Date d\'expiration requise.');
       return;
     }
+    final rawExpiry = _kycExpirationCtrl.text.trim();
+    final isoExpiry = displayDateToIso(rawExpiry);
+    if (isoExpiry == null) {
+      showToastError(context, 'Date invalide — format attendu : JJ/MM/AAAA');
+      return;
+    }
     setState(() => _submittingKyc = true);
     try {
       await _clientService.submitKyc(
         typePiece: _kycTypeMap[_kycType] ?? _kycType,
         numeroPiece: _kycNumeroCtrl.text.trim(),
-        dateExpiration: _kycExpirationCtrl.text.trim(),
+        dateExpiration: isoExpiry,
+        fileBytes: _kycFile?.bytes,
+        fileName: _kycFile?.name,
       );
       if (mounted) {
         showToast(context, 'KYC soumis — vérification par un agent sous 48h.');
         _kycNumeroCtrl.clear();
         _kycExpirationCtrl.clear();
+        setState(() { _kycFile = null; _showReplaceForm = false; });
         _load();
       }
     } on ApiException catch (e) {
@@ -260,6 +292,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  Future<void> _openKycDoc(String url) async {
+    try {
+      final Uint8List bytes = await _clientService.fetchKycDocument(url);
+      if (!mounted) return;
+      final lower = url.toLowerCase();
+      final isImage = lower.contains('.jpg') || lower.contains('.jpeg') || lower.contains('.png');
+      if (isImage) {
+        showDialog(
+          context: context,
+          builder: (_) => Dialog(
+            backgroundColor: SimbisaColors.noir.withValues(alpha: 0.95),
+            insetPadding: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.memory(bytes, fit: BoxFit.contain),
+                ),
+                Positioned(
+                  top: 8, right: 8,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        showToast(context, 'Document PDF — visualisation disponible uniquement via navigateur.');
+      }
+    } on ApiException catch (e) {
+      if (mounted) showToastError(context, e.message);
+    } catch (_) {
+      if (mounted) showToastError(context, 'Impossible d\'afficher le document.');
+    }
+  }
+
   Future<void> _logout() async {
     await _auth.logout();
     if (!mounted) return;
@@ -270,15 +346,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
-        backgroundColor: SimbisaColors.surface,
         body: Center(child: CircularProgressIndicator(color: SimbisaColors.or)),
       );
     }
 
     if (_hasError || _profile == null) {
       return Scaffold(
-        backgroundColor: SimbisaColors.surface,
-        appBar: AppBar(title: const Text('Mon profil & KYC'), backgroundColor: SimbisaColors.panel),
+        appBar: AppBar(title: const Text('Mon profil & KYC')),
         body: Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text('Impossible de charger le profil.', style: SimbisaText.body(14, color: SimbisaColors.danger)),
@@ -292,10 +366,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profile = _profile!;
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Mon profil & KYC'),
-        backgroundColor: SimbisaColors.panel,
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: RefreshIndicator(
@@ -419,35 +491,148 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildKycUpload(ClientProfile profile) {
-    final alreadyVerified = profile.identites.any((i) => i.isVerified && !i.isExpired);
+    final existingId = profile.identites.isNotEmpty ? profile.identites.last : null;
+    final showForm = existingId == null || _showReplaceForm;
+
     return NeuCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Agent de crédit assigné
+          if (profile.agentAssigne != null) ...[
+            Row(
+              children: [
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: SimbisaColors.teal.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.person_pin_rounded, color: SimbisaColors.teal, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Agent de crédit', style: SimbisaText.label(color: SimbisaColors.muted)),
+                      const SizedBox(height: 2),
+                      Text(profile.agentAssigne!.fullName,
+                          style: SimbisaText.body(13, weight: FontWeight.w600, color: SimbisaColors.blanc)),
+                      Text(profile.agentAssigne!.telephone,
+                          style: SimbisaText.body(11, color: SimbisaColors.muted)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(color: Colors.white12, height: 24),
+          ],
+
+          // Titre section
           Row(
             children: [
               Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: SimbisaColors.or.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(
+                  color: SimbisaColors.or.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: const Icon(Icons.badge_rounded, color: SimbisaColors.or, size: 18),
               ),
               const SizedBox(width: 12),
-              const Text('Soumettre un document KYC', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+              Text(
+                showForm && _showReplaceForm ? 'Remplacer le document KYC' : 'Document KYC',
+                style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          if (alreadyVerified)
+
+          if (!showForm) ...[
+            // Carte du document existant
             NeuInset(
-              padding: const EdgeInsets.all(12),
-              child: Row(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.check_circle_rounded, color: SimbisaColors.success, size: 16),
-                  const SizedBox(width: 8),
-                  Text('Identité déjà vérifiée.', style: SimbisaText.body(13, color: SimbisaColors.success)),
+                  Row(
+                    children: [
+                      Icon(
+                        existingId.isVerified
+                            ? Icons.check_circle_rounded
+                            : Icons.hourglass_top_rounded,
+                        color: existingId.isVerified ? SimbisaColors.success : SimbisaColors.or,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          [
+                            existingId.typePiece.replaceAll('_', ' '),
+                            if (existingId.numeroPiece != null) '· ${existingId.numeroPiece}',
+                          ].join(' '),
+                          style: SimbisaText.body(13, weight: FontWeight.w600, color: SimbisaColors.blanc),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (existingId.dateExpiration != null) ...[
+                    const SizedBox(height: 4),
+                    Text('Expire : ${existingId.dateExpiration}',
+                        style: SimbisaText.body(11, color: SimbisaColors.muted)),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (existingId.documentScan != null) ...[
+                        Expanded(
+                          child: _KycActionButton(
+                            icon: Icons.visibility_outlined,
+                            label: 'Voir la pièce',
+                            color: SimbisaColors.or,
+                            onTap: () => _openKycDoc(existingId.documentScan!),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Expanded(
+                        child: _KycActionButton(
+                          icon: Icons.refresh_rounded,
+                          label: 'Remplacer',
+                          color: SimbisaColors.muted,
+                          onTap: () => setState(() => _showReplaceForm = true),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            )
-          else ...[
+            ),
+          ] else ...[
+            // Avertissement si on remplace une pièce existante
+            if (_showReplaceForm)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: NeuInset(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: SimbisaColors.or, size: 14),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'La nouvelle pièce remplacera l\'ancienne après validation par un agent.',
+                          style: SimbisaText.body(11, color: SimbisaColors.or),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Formulaire KYC
             Text('Type de pièce', style: SimbisaText.body(12, color: SimbisaColors.muted)),
             const SizedBox(height: 8),
             Container(
@@ -462,28 +647,96 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   isExpanded: true,
                   value: _kycType,
                   dropdownColor: SimbisaColors.panel,
-                  items: _kycTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: SimbisaText.body(13)))).toList(),
+                  items: _kycTypes
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t, style: SimbisaText.body(13))))
+                      .toList(),
                   onChanged: (v) => setState(() => _kycType = v ?? _kycType),
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            NeuTextField(label: 'Numéro de pièce', hint: 'Ex : 123456789', prefixIcon: const Icon(Icons.numbers_rounded), controller: _kycNumeroCtrl),
+            NeuTextField(
+              label: 'Numéro de pièce',
+              hint: 'Ex : 123456789',
+              prefixIcon: const Icon(Icons.numbers_rounded),
+              controller: _kycNumeroCtrl,
+            ),
             const SizedBox(height: 12),
             NeuTextField(
               label: 'Date d\'expiration',
-              hint: 'AAAA-MM-JJ',
+              hint: 'JJ/MM/AAAA',
               prefixIcon: const Icon(Icons.calendar_today_outlined),
               controller: _kycExpirationCtrl,
-              keyboardType: TextInputType.datetime,
+              keyboardType: TextInputType.number,
+              inputFormatters: [DateInputFormatter()],
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: _pickKycFile,
+              child: NeuInset(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                child: Row(
+                  children: [
+                    Icon(
+                      _kycFile != null ? Icons.check_circle_rounded : Icons.upload_file_rounded,
+                      size: 20,
+                      color: _kycFile != null ? SimbisaColors.success : SimbisaColors.or,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _kycFile != null ? _kycFile!.name : 'Joindre un document',
+                            style: SimbisaText.body(13,
+                                color: _kycFile != null ? SimbisaColors.success : SimbisaColors.blanc),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text('PNG, JPG ou PDF — recommandé',
+                              style: SimbisaText.body(11, color: SimbisaColors.muted)),
+                        ],
+                      ),
+                    ),
+                    if (_kycFile != null)
+                      GestureDetector(
+                        onTap: () => setState(() => _kycFile = null),
+                        child: const Icon(Icons.close_rounded, size: 16, color: SimbisaColors.muted),
+                      ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 16),
-            NeuButton(
-              width: double.infinity,
-              loading: _submittingKyc,
-              onTap: _submitKyc,
-              child: const Text('Soumettre le KYC'),
-            ),
+            if (_showReplaceForm)
+              Row(
+                children: [
+                  Expanded(
+                    child: NeuButton(
+                      gold: false,
+                      secondary: true,
+                      onTap: () => setState(() { _showReplaceForm = false; _kycFile = null; }),
+                      child: const Text('Annuler'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: NeuButton(
+                      width: double.infinity,
+                      loading: _submittingKyc,
+                      onTap: _submitKyc,
+                      child: const Text('Remplacer la pièce'),
+                    ),
+                  ),
+                ],
+              )
+            else
+              NeuButton(
+                width: double.infinity,
+                loading: _submittingKyc,
+                onTap: _submitKyc,
+                child: const Text('Soumettre le KYC'),
+              ),
           ],
         ],
       ),
@@ -503,10 +756,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 12),
           NeuTextField(
             label: 'Date de naissance',
-            hint: 'AAAA-MM-JJ',
+            hint: 'JJ/MM/AAAA',
             prefixIcon: const Icon(Icons.cake_outlined),
             controller: _dateNaissanceCtrl,
-            keyboardType: TextInputType.datetime,
+            keyboardType: TextInputType.number,
+            inputFormatters: [DateInputFormatter()],
           ),
           const SizedBox(height: 16),
           NeuButton(width: double.infinity, loading: _savingProfile, onTap: _saveProfile, child: const Text('Enregistrer')),
@@ -917,6 +1171,43 @@ class _MmRow extends StatelessWidget {
         Text(label, style: SimbisaText.body(12, color: SimbisaColors.muted)),
         Flexible(child: Text(value, style: SimbisaText.body(12, weight: FontWeight.w600), textAlign: TextAlign.end)),
       ],
+    );
+  }
+}
+
+class _KycActionButton extends StatelessWidget {
+  const _KycActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
+            Text(label, style: SimbisaText.body(12, color: color, weight: FontWeight.w600)),
+          ],
+        ),
+      ),
     );
   }
 }

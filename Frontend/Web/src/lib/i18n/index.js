@@ -143,6 +143,17 @@ export const translations = {
     'ai.page_title': 'Explications IA',
     // Aide
     'help.page_title': 'Aide',
+    // Erreurs & validation
+    'error.fill_all_fields': 'Veuillez remplir tous les champs.',
+    'error.phone_required': 'Numéro de téléphone requis.',
+    'error.password_required': 'Mot de passe requis.',
+    'error.otp_six_digits': 'Saisissez le code à 6 chiffres reçu par e-mail.',
+    'error.otp_expired': 'Code incorrect ou expiré.',
+    'error.login_failed': 'Connexion impossible.',
+    'error.invalid_code': 'Code invalide.',
+    // Accessibilité
+    'aria.show_password': 'Afficher le mot de passe',
+    'aria.hide_password': 'Masquer le mot de passe',
   },
 
   en: {
@@ -283,6 +294,17 @@ export const translations = {
     'ai.page_title': 'AI explanations',
     // Aide
     'help.page_title': 'Help',
+    // Errors & validation
+    'error.fill_all_fields': 'Please fill in all fields.',
+    'error.phone_required': 'Phone number required.',
+    'error.password_required': 'Password required.',
+    'error.otp_six_digits': 'Enter the 6-digit code sent to your email.',
+    'error.otp_expired': 'Incorrect or expired code.',
+    'error.login_failed': 'Login failed.',
+    'error.invalid_code': 'Invalid code.',
+    // Accessibility
+    'aria.show_password': 'Show password',
+    'aria.hide_password': 'Hide password',
   },
 
   ln: {
@@ -423,6 +445,17 @@ export const translations = {
     'ai.page_title': 'Litambola ya AI',
     // Aide
     'help.page_title': 'Lisalisi',
+    // Bimela & validation
+    'error.fill_all_fields': 'Tia biloko nyonso.',
+    'error.phone_required': 'Numero ya telephone esengami.',
+    'error.password_required': 'Nzela ya kobikisa esengami.',
+    'error.otp_six_digits': 'Tia kode ya nimero motoba eutaki na email.',
+    'error.otp_expired': 'Kode ezangi to ekufi.',
+    'error.login_failed': 'Kokota esalemi te.',
+    'error.invalid_code': 'Kode ezangi.',
+    // Accessibilité
+    'aria.show_password': 'Monisa nzela',
+    'aria.hide_password': 'Bimba nzela',
   },
 }
 

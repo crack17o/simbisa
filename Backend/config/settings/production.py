@@ -38,20 +38,9 @@ if SENTRY_DSN:
         environment='production',
     )
 
-# Cloudinary — documents KYC (scans pièces d'identité)
-_cloudinary_apps = ('cloudinary_storage', 'cloudinary')
-_installed = list(INSTALLED_APPS)  # noqa: F405
-for app in reversed(_cloudinary_apps):
-    if app not in _installed:
-        _static_idx = _installed.index('django.contrib.staticfiles')
-        _installed.insert(_static_idx, app)
-INSTALLED_APPS = _installed  # noqa: F405
-
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': config('CLOUDINARY_API_KEY'),
-    'API_SECRET': config('CLOUDINARY_API_SECRET'),
-    'SECURE': True,
-}
-
-DEFAULT_FILE_STORAGE = 'apps.core.storage.KYCCloudinaryStorage'
+# Stockage local — documents KYC stockés dans MEDIA_ROOT/kyc/scans/
+# Accès protégé via /media/kyc/** (authentification Django requise, voir config/urls.py)
+# En production, Nginx NE doit PAS servir /media/kyc/ directement.
+# Exemple Nginx :
+#   location /media/ { alias /srv/simbisa/media/; }
+#   location /media/kyc/ { deny all; }  # bloquer l'accès direct, passer par Django

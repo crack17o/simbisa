@@ -43,7 +43,6 @@ class _ClientShellState extends State<ClientShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       body: AnimatedOpacity(
         opacity: _pageOpacity,
         duration: const Duration(milliseconds: 180),
@@ -67,27 +66,22 @@ class _ClientShellState extends State<ClientShell> {
   }
 
   Widget _buildNavBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final panelColor = isDark ? SimbisaColors.panel : SimbisaLightColors.panel;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.black.withValues(alpha: 0.06);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
-            color: SimbisaColors.panel,
+            color: panelColor,
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Colors.white.withOpacity(0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF050505).withOpacity(0.75),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
-              ),
-              const BoxShadow(
-                color: Color(0xFF232323),
-                blurRadius: 10,
-                offset: Offset(0, 1),
-              ),
-            ],
+            border: Border.all(color: borderColor),
+            boxShadow: NeuShadow.flatAdaptive(context, blur: 22, offset: 10),
           ),
           child: Row(
             children: List.generate(_items.length, (i) {
@@ -102,7 +96,7 @@ class _ClientShellState extends State<ClientShell> {
                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
                     decoration: active
                         ? BoxDecoration(
-                            color: SimbisaColors.or.withOpacity(0.10),
+                            color: SimbisaColors.or.withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(18),
                             boxShadow: NeuShadow.inset(blur: 6, offset: 2),
                           )

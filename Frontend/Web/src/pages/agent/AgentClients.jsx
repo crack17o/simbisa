@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { UserPlus, Users, FileCheck, Pencil } from 'lucide-react'
+import { UserPlus, Users, FileCheck, Pencil, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import FormField from '@/components/molecules/FormField'
@@ -7,7 +7,7 @@ import Button from '@/components/atoms/Button'
 import Badge from '@/components/atoms/Badge'
 import { useAuth } from '@/context/AuthContext'
 import { ROLES } from '@/constants/roles'
-import { listClients, createClientByAgent, updateClientByAgent, verifyKyc } from '@/api/clients'
+import { listClients, createClientByAgent, updateClientByAgent, verifyKyc, fetchKycFile } from '@/api/clients'
 
 const KYC_BADGE = {
   valide: 'success',
@@ -100,6 +100,15 @@ export default function AgentClients() {
     }
   }
 
+  const openKycDoc = async (url) => {
+    try {
+      const blobUrl = await fetchKycFile(url)
+      window.open(blobUrl, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      toast.error('Impossible d\'afficher le document : ' + err.message)
+    }
+  }
+
   const pendingKyc = clients.flatMap(c =>
     (c.identites || [])
       .filter(i => i.statut_verification === 'en_attente')
@@ -173,11 +182,22 @@ export default function AgentClients() {
                 <div key={identite.id} className="neu-flat p-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-medium text-blanc">{client.utilisateur?.full_name}</p>
-                    <p className="text-xs text-muted">{client.commune_label} · {identite.type_piece} {identite.numero_piece}</p>
+                    <p className="text-xs text-muted">
+                      {client.commune_label} · {identite.type_piece?.replace('_', ' ')} {identite.numero_piece}
+                    </p>
+                    {identite.date_expiration && (
+                      <p className="text-xs text-muted">Expire : {identite.date_expiration}</p>
+                    )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    {identite.document_scan && (
+                      <Button size="sm" variant="secondary" icon={Eye}
+                        onClick={() => openKycDoc(identite.document_scan)}>
+                        Voir la pièce
+                      </Button>
+                    )}
                     <Button size="sm" onClick={() => handleVerifyKyc(client, identite.id, 'valide')}>Valider</Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleVerifyKyc(client, identite.id, 'rejete')}>Rejeter</Button>
+                    <Button size="sm" variant="danger" onClick={() => handleVerifyKyc(client, identite.id, 'rejete')}>Rejeter</Button>
                   </div>
                 </div>
               ))}
@@ -204,9 +224,20 @@ export default function AgentClients() {
                     <p className="text-xs text-muted">
                       {c.utilisateur?.telephone} · {c.commune_label || c.commune_kinshasa}
                     </p>
+                    {lastId && (
+                      <p className="text-xs text-muted mt-0.5">
+                        {lastId.type_piece?.replace('_', ' ')} — {lastId.numero_piece}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge label={kyc} variant={KYC_BADGE[kyc] || 'default'} />
+                    {lastId?.document_scan && (
+                      <Button size="sm" variant="ghost" icon={Eye}
+                        onClick={() => openKycDoc(lastId.document_scan)}>
+                        Pièce
+                      </Button>
+                    )}
                     {isAgent && (
                       <Button size="sm" variant="ghost" icon={Pencil} onClick={() => startEdit(c)}>Modifier</Button>
                     )}

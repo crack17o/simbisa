@@ -32,18 +32,24 @@ def _generate_reference() -> str:
 @shared_task(name='wallets.simulate_mm_activity', bind=True, max_retries=2)
 def simulate_mm_activity(self):
     """
-    Simule 1 à 3 transactions Mobile Money par compte actif.
-    Exécutée toutes les heures par django-celery-beat.
+    Simule 1-2 transactions Mobile Money pour 2 clients aléatoires.
+    Exécutée toutes les 15 minutes par django-celery-beat.
     """
     from apps.wallets.models import MobileMoneyAccount, MobileMoneyTransaction
 
-    accounts = MobileMoneyAccount.objects.filter(is_active=True).select_related('id_client')
+    from apps.clients.models import Client
+    all_clients = list(Client.objects.all().values_list('pk', flat=True))
+    if not all_clients:
+        logger.info("Simulation MM : aucun client trouvé.")
+        return {'transactions_created': 0}
+
+    chosen_ids = random.sample(all_clients, min(2, len(all_clients)))
+    accounts = MobileMoneyAccount.objects.filter(
+        is_active=True, id_client__pk__in=chosen_ids
+    ).select_related('id_client')
     total = 0
 
     for account in accounts:
-        # 40 % de chance de générer une transaction pour ce compte à chaque tick
-        if random.random() > 0.40:
-            continue
 
         nb_txns = random.randint(1, 2)
         montants = _MONTANTS_USD if account.devise == 'USD' else _MONTANTS_CDF
@@ -86,5 +92,5 @@ def simulate_mm_activity(self):
             except Exception as exc:
                 logger.warning(f"Erreur simulation MM account #{account.pk}: {exc}")
 
-    logger.info(f"Simulation MM : {total} transaction(s) créée(s) pour {accounts.count()} comptes.")
+    logger.info(f"Simulation MM : {total} transaction(s) créée(s) pour {len(chosen_ids)} client(s) sélectionné(s).")
     return {'transactions_created': total}

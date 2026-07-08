@@ -30,6 +30,7 @@ dependencies:
   gap: ^3.0.1
   http: ^1.2.1
   shared_preferences: ^2.2.3
+  file_picker: ^8.1.2
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +38,21 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   build_runner: ^2.4.9
   riverpod_generator: ^2.4.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0A0A0A"
+  adaptive_icon_foreground: "assets/images/icon_foreground.png"
+  web:
+    generate: false
+  windows:
+    generate: false
+  macos:
+    generate: false
 
 flutter:
   uses-material-design: true

@@ -6,13 +6,16 @@ import AuthLayout from '@/components/templates/AuthLayout'
 import FormField from '@/components/molecules/FormField'
 import Button from '@/components/atoms/Button'
 import { useAuth } from '@/context/AuthContext'
+import { useLang } from '@/context/LangContext'
 import { getHomeRoute } from '@/constants/roles'
 
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const { login } = useAuth()
+  const { t } = useLang()
   const [form, setForm] = useState({ phone: '', password: '' })
+  const [fieldErrors, setFieldErrors] = useState({ phone: '', password: '' })
   const [otpCode, setOtpCode] = useState('')
   const [otpStep, setOtpStep] = useState(null)
   const [showPwd, setShowPwd] = useState(false)
@@ -42,10 +45,29 @@ export default function Login() {
     return result
   }
 
+  const handleBlur = (field) => (e) => {
+    const value = e.target.value
+    if (!value) {
+      setFieldErrors(p => ({
+        ...p,
+        [field]: field === 'phone' ? t('error.phone_required') : t('error.password_required'),
+      }))
+    }
+  }
+
+  const handleChange = (field) => (e) => {
+    setForm(p => ({ ...p, [field]: e.target.value }))
+    if (fieldErrors[field]) setFieldErrors(p => ({ ...p, [field]: '' }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.phone || !form.password) {
-      toast.error('Veuillez remplir tous les champs.')
+      setFieldErrors({
+        phone: form.phone ? '' : t('error.phone_required'),
+        password: form.password ? '' : t('error.password_required'),
+      })
+      toast.error(t('error.fill_all_fields'))
       return
     }
     setLoading(true)
@@ -53,7 +75,7 @@ export default function Login() {
       const user = await runLogin(form.phone, form.password)
       if (user) handleLoginSuccess(user)
     } catch (err) {
-      toast.error(err.message || 'Connexion impossible.')
+      toast.error(err.message || t('error.login_failed'))
     } finally {
       setLoading(false)
     }
@@ -62,19 +84,19 @@ export default function Login() {
   const handleOtpSubmit = async (e) => {
     e.preventDefault()
     if (!otpCode || otpCode.length !== 6) {
-      toast.error('Saisissez le code à 6 chiffres reçu par e-mail.')
+      toast.error(t('error.otp_six_digits'))
       return
     }
     setLoading(true)
     try {
       const user = await login(otpStep.telephone, otpStep.password, null, { otp_code: otpCode })
       if (user?.requiresOtp) {
-        toast.error('Code incorrect ou expiré.')
+        toast.error(t('error.otp_expired'))
         return
       }
       handleLoginSuccess(user)
     } catch (err) {
-      toast.error(err.message || 'Code invalide.')
+      toast.error(err.message || t('error.invalid_code'))
     } finally {
       setLoading(false)
     }
@@ -100,6 +122,7 @@ export default function Login() {
 
           <form onSubmit={handleOtpSubmit} className="flex flex-col gap-4">
             <FormField
+              name="otp"
               label="Code reçu par e-mail"
               type="text"
               icon={Mail}
@@ -131,23 +154,34 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <FormField
+            name="phone"
             label="Numéro de téléphone"
             type="tel"
             icon={Phone}
             placeholder="+243 8XX XXX XXX"
             value={form.phone}
-            onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+            error={fieldErrors.phone}
+            onChange={handleChange('phone')}
+            onBlur={handleBlur('phone')}
           />
 
           <FormField
+            name="password"
             label="Mot de passe"
             type={showPwd ? 'text' : 'password'}
             icon={Lock}
             placeholder="••••••••"
             value={form.password}
-            onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+            error={fieldErrors.password}
+            onChange={handleChange('password')}
+            onBlur={handleBlur('password')}
             iconRight={
-              <button type="button" onClick={() => setShowPwd(p => !p)} className="text-muted hover:text-or transition-colors">
+              <button
+                type="button"
+                onClick={() => setShowPwd(p => !p)}
+                className="text-muted hover:text-or transition-colors"
+                aria-label={showPwd ? t('aria.hide_password') : t('aria.show_password')}
+              >
                 {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             }

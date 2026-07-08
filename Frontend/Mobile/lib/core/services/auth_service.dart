@@ -68,6 +68,9 @@ class AuthService {
     required String communeKinshasa,
     String postnom = '',
     String? email,
+    String? adresse,
+    String? profession,
+    String? dateNaissance,
   }) async {
     final trimmedEmail = email?.trim();
     final body = <String, dynamic>{
@@ -82,6 +85,9 @@ class AuthService {
     if (trimmedEmail != null && trimmedEmail.isNotEmpty) {
       body['email'] = trimmedEmail;
     }
+    if (adresse != null && adresse.isNotEmpty) body['adresse'] = adresse;
+    if (profession != null && profession.isNotEmpty) body['profession'] = profession;
+    if (dateNaissance != null && dateNaissance.isNotEmpty) body['date_naissance'] = dateNaissance;
 
     final res = await _api.post('auth/register/', body: body, auth: false);
     final data = res['data'] as Map<String, dynamic>?;

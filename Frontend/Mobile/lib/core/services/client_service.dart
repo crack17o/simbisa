@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../models/client_profile.dart';
 import 'api_client.dart';
 
@@ -27,10 +29,16 @@ class ClientService {
     return ClientProfile.fromJson(data);
   }
 
+  Future<Uint8List> fetchKycDocument(String absoluteUrl) {
+    return _api.fetchAuthBytes(absoluteUrl);
+  }
+
   Future<void> submitKyc({
     required String typePiece,
     required String numeroPiece,
     required String dateExpiration,
+    List<int>? fileBytes,
+    String? fileName,
   }) async {
     await _api.postMultipart(
       'clients/me/identite/',
@@ -39,6 +47,9 @@ class ClientService {
         'numero_piece': numeroPiece,
         'date_expiration': dateExpiration,
       },
+      fileBytes: fileBytes,
+      fileFieldName: fileBytes != null ? 'document_scan' : null,
+      fileName: fileName,
     );
   }
 }

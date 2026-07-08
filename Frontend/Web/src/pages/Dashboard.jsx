@@ -60,10 +60,58 @@ export default function Dashboard() {
   const recentCredits = credits.slice(0, 3)
   const globalScore = score?.score_client ?? 0
 
+  if (loading) {
+    return (
+      <DashboardLayout title={t('dash.page_title')}>
+        <div className="flex flex-col gap-6 animate-pulse" aria-busy="true" aria-label={t('dash.loading')}>
+          <div className="neu-flat p-6 flex items-center justify-between">
+            <div className="flex flex-col gap-3">
+              <div className="h-3 w-20 bg-white/10 rounded-full" />
+              <div className="h-7 w-44 bg-white/10 rounded-xl" />
+              <div className="h-3 w-28 bg-white/10 rounded-full" />
+            </div>
+            <div className="w-24 h-24 rounded-full bg-white/10 flex-shrink-0" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="neu-flat p-5 flex flex-col gap-3">
+                <div className="h-3 w-16 bg-white/10 rounded-full" />
+                <div className="h-7 w-24 bg-white/10 rounded-xl" />
+                <div className="h-3 w-20 bg-white/10 rounded-full" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 neu-flat p-6 flex flex-col gap-4">
+              <div className="h-5 w-44 bg-white/10 rounded-xl" />
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="neu-sm p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/10 flex-shrink-0" />
+                    <div className="flex flex-col gap-2">
+                      <div className="h-3 w-32 bg-white/10 rounded-full" />
+                      <div className="h-3 w-16 bg-white/10 rounded-full" />
+                    </div>
+                  </div>
+                  <div className="h-5 w-20 bg-white/10 rounded-xl" />
+                </div>
+              ))}
+            </div>
+            <div className="neu-flat p-5 flex flex-col gap-3">
+              <div className="h-4 w-28 bg-white/10 rounded-xl" />
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="neu-sm h-12 bg-white/5 rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout title={t('dash.page_title')}>
       <div className="flex flex-col gap-6">
-        {loading && <p className="text-sm text-muted">{t('dash.loading')}</p>}
 
         <div
           className="neu-flat p-6 flex items-center justify-between"

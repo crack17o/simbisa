@@ -97,4 +97,33 @@ export async function apiRequest(path, { method = 'GET', body, auth = true, head
   return data
 }
 
+/**
+ * Télécharge un fichier protégé (KYC, media) en passant le JWT en header.
+ * Retourne un Blob exploitable via URL.createObjectURL().
+ * Gère le refresh token automatiquement comme apiRequest.
+ */
+export async function fetchAuthFile(url, retried = false) {
+  const stored = getStoredAuth()
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`
+
+  const res = await fetch(fullUrl, {
+    headers: stored?.accessToken ? { Authorization: `Bearer ${stored.accessToken}` } : {},
+    credentials: 'include',
+  })
+
+  if (res.status === 401 && !retried && stored?.refreshToken) {
+    try {
+      const tokens = await refreshAccessToken(stored.refreshToken)
+      setStoredAuth({ ...stored, accessToken: tokens.access, refreshToken: tokens.refresh, token: tokens.access })
+      return fetchAuthFile(url, true)
+    } catch {
+      setStoredAuth(null)
+      throw new Error('Session expirée. Reconnectez-vous.')
+    }
+  }
+
+  if (!res.ok) throw new Error(`Accès refusé (${res.status})`)
+  return res.blob()
+}
+
 export { API_BASE }

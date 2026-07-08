@@ -1,8 +1,10 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve as static_serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from apps.clients.views import serve_kyc_document
 
 API_V1 = 'api/v1/'
 
@@ -27,10 +29,21 @@ urlpatterns = [
     path('health/', include('apps.core.health_urls')),
 ]
 
+# Documents KYC : accès protégé par authentification JWT (toujours actif)
+urlpatterns += [
+    re_path(r'^media/kyc/(?P<path>.*)$', serve_kyc_document),
+]
+
 if settings.DEBUG:
+    # Autres fichiers media (non-KYC) servis directement en dev
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     try:
         import debug_toolbar
         urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns
     except ImportError:
         pass
+else:
+    # En production avec Nginx : Nginx sert /media/ et proxie /media/kyc/ vers Django.
+    # Sur VPS sans Nginx (ou dev VPS), mettre SERVE_MEDIA_DJANGO=true dans .env
+    if settings.SERVE_MEDIA_DJANGO:
+        urlpatterns += [re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': settings.MEDIA_ROOT})]

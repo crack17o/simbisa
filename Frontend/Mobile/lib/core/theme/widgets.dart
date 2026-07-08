@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/formatters.dart';
 import 'app_theme.dart';
@@ -175,6 +176,7 @@ class NeuTextField extends StatelessWidget {
   final bool obscureText;
   final String? errorText;
   final ValueChanged<String>? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const NeuTextField({
     super.key,
@@ -187,6 +189,7 @@ class NeuTextField extends StatelessWidget {
     this.obscureText = false,
     this.errorText,
     this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -214,6 +217,7 @@ class NeuTextField extends StatelessWidget {
             keyboardType: keyboardType,
             obscureText: obscureText,
             onChanged: onChanged,
+            inputFormatters: inputFormatters,
             style: SimbisaText.body(14, color: textColor),
             decoration: InputDecoration(
               hintText: hint,

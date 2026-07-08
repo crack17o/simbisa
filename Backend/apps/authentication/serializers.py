@@ -23,12 +23,16 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8, style={'input_type': 'password'})
     password_confirm = serializers.CharField(write_only=True, style={'input_type': 'password'})
     commune_kinshasa = serializers.ChoiceField(choices=KINSHASA_COMMUNES, write_only=True)
+    adresse = serializers.CharField(required=False, allow_blank=True, write_only=True, default='')
+    profession = serializers.CharField(required=False, allow_blank=True, write_only=True, default='')
+    date_naissance = serializers.DateField(required=False, allow_null=True, write_only=True, default=None)
 
     class Meta:
         model = Utilisateur
         fields = [
             'telephone', 'nom', 'postnom', 'prenom', 'email',
             'password', 'password_confirm', 'commune_kinshasa',
+            'adresse', 'profession', 'date_naissance',
         ]
 
     def validate_telephone(self, value):
@@ -48,9 +52,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         commune = validated_data.pop('commune_kinshasa')
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
+        adresse = validated_data.pop('adresse', '')
+        profession = validated_data.pop('profession', '')
+        date_naissance = validated_data.pop('date_naissance', None)
         role, _ = Role.objects.get_or_create(nom_role='Client')
         user = Utilisateur.objects.create_user(role=role, password=password, **validated_data)
         user._registration_commune = commune
+        user._registration_adresse = adresse
+        user._registration_profession = profession
+        user._registration_date_naissance = date_naissance
         return user
 
 

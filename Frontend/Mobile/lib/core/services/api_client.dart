@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -77,6 +78,20 @@ class ApiClient {
         : 'Erreur API (${response.statusCode})';
     final code = error is Map ? error['code'] as String? : null;
     throw ApiException(message, statusCode: response.statusCode, code: code);
+  }
+
+  Future<Uint8List> fetchAuthBytes(String absoluteUrl) async {
+    final token = await _storage.getAccessToken();
+    final headers = <String, String>{
+      'X-Device-Id': 'simbisa-mobile',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+    final uri = Uri.parse(absoluteUrl);
+    final res = await http.get(uri, headers: headers);
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return res.bodyBytes;
+    }
+    throw ApiException('Accès refusé (${res.statusCode})', statusCode: res.statusCode);
   }
 
   Future<Map<String, dynamic>> _request(

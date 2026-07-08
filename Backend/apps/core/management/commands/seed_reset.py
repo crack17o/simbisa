@@ -51,6 +51,7 @@ class Command(BaseCommand):
             self._seed_scoring_rules()
             self._seed_rag_docs()
 
+        self._seed_celery_beat()
         self._print_summary()
 
     # ------------------------------------------------------------------ #
@@ -361,6 +362,27 @@ class Command(BaseCommand):
                 defaults={'content': content, 'document_type': doc_type, 'source': 'seed'},
             )
         self.stdout.write(f'  [OK] {len(docs)} documents RAG')
+
+    # ------------------------------------------------------------------ #
+    #  CELERY BEAT                                                         #
+    # ------------------------------------------------------------------ #
+    def _seed_celery_beat(self):
+        try:
+            from django_celery_beat.models import IntervalSchedule, PeriodicTask
+            schedule, _ = IntervalSchedule.objects.get_or_create(
+                every=15, period=IntervalSchedule.MINUTES,
+            )
+            PeriodicTask.objects.update_or_create(
+                name='Simulation Mobile Money (15 min)',
+                defaults={
+                    'task': 'wallets.simulate_mm_activity',
+                    'interval': schedule,
+                    'enabled': True,
+                },
+            )
+            self.stdout.write('  [OK] Celery Beat : simulate_mm_activity toutes les 15 min')
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f'  [SKIP] Celery Beat non configuré : {exc}'))
 
     # ------------------------------------------------------------------ #
     #  RÉSUMÉ                                                              #

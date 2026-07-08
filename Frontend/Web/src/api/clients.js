@@ -1,4 +1,4 @@
-import { apiRequest } from './client'
+import { apiRequest, fetchAuthFile } from './client'
 
 export function listCommunes() {
   return apiRequest('/api/v1/clients/communes/', { auth: false })
@@ -41,4 +41,15 @@ export function updateClientByAgent(clientId, data) {
 
 export function deleteClientAdmin(clientId) {
   return apiRequest(`/api/v1/clients/${clientId}/`, { method: 'DELETE' })
+}
+
+/**
+ * Ouvre un document KYC dans un nouvel onglet en passant le JWT en header.
+ * Retourne une blob URL valide pendant 30 s (révoquée automatiquement).
+ */
+export async function fetchKycFile(documentUrl) {
+  const blob = await fetchAuthFile(documentUrl)
+  const blobUrl = URL.createObjectURL(blob)
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000)
+  return blobUrl
 }

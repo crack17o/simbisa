@@ -2,13 +2,14 @@ import React, { forwardRef } from 'react'
 import clsx from 'clsx'
 
 const Input = forwardRef(function Input(
-  { label, error, hint, icon: Icon, iconRight, className = '', ...props },
+  { label, error, hint, icon: Icon, iconRight, className = '', id, name, ...props },
   ref
 ) {
+  const inputId = id || name
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="text-xs font-medium text-muted uppercase tracking-widest">
+        <label htmlFor={inputId} className="text-xs font-medium text-muted uppercase tracking-widest">
           {label}
         </label>
       )}
@@ -22,6 +23,8 @@ const Input = forwardRef(function Input(
 
         <input
           ref={ref}
+          id={inputId}
+          name={name}
           className={clsx(
             'w-full bg-surface text-blanc text-sm',
             'rounded-xl px-4 py-3.5',

@@ -14,21 +14,21 @@ export default function AuthLayout({ children }) {
         <Logo size="lg" />
         <div className="flex flex-col gap-4">
           <h2 className="text-4xl font-display font-bold text-blanc leading-tight">
-            L'inclusion financière<br />
-            <span className="text-gradient-gold">commence ici.</span>
+            Au-delà d&apos;un simple<br />
+            <span className="text-gradient-gold">accès au crédit.</span>
           </h2>
           <p className="text-muted text-base max-w-xs leading-relaxed">
-            Accédez au crédit grâce à votre historique Mobile Money. Rapide, transparent, et conçu pour la RDC.
+            Votre historique Mobile Money devient votre garantie. Conçu pour Kinshasa, pensé pour tous.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { v: '500k+', l: 'Clients actifs' },
-            { v: '<3s',   l: 'Décision crédit' },
-            { v: '100%',  l: 'Dématérialisé' },
+            { v: 'Rapidité',  l: 'Décision en moins de 3 secondes' },
+            { v: 'Respect',   l: 'Confidentialité et transparence' },
+            { v: 'Rigueur',   l: 'Scoring à 4 moteurs certifiés' },
           ].map(s => (
-            <div key={s.l} className="neu-flat p-4 text-center">
-              <p className="text-gradient-gold font-display font-bold text-2xl">{s.v}</p>
+            <div key={s.v} className="neu-flat p-4 text-center">
+              <p className="text-gradient-gold font-display font-bold text-xl">{s.v}</p>
               <p className="text-xs text-muted mt-1">{s.l}</p>
             </div>
           ))}

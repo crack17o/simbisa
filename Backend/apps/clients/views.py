@@ -1,8 +1,11 @@
 import logging
+import os
+from django.conf import settings
+from django.http import FileResponse, Http404
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser
 from drf_spectacular.utils import extend_schema
@@ -103,6 +106,44 @@ class IdentiteCreateView(generics.CreateAPIView):
         client = self.request.user.client_profile
         serializer.save(id_client=client)
         logger.info(f"Document KYC soumis par client #{client.pk}")
+
+
+_AGENT_ROLES = {'Agent de crédit', 'Responsable crédit', 'Administrateur', 'Analyste risque', 'Auditeur'}
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def serve_kyc_document(request, path):
+    """
+    Sert un document KYC avec vérification auth + autorisation.
+    URL : /media/kyc/<path>  →  MEDIA_ROOT/kyc/<path>
+    Chemin DB (document_scan) : kyc/<path>  (relatif à MEDIA_ROOT)
+    """
+    media_root = str(settings.MEDIA_ROOT)
+    # Reconstruire le chemin complet : MEDIA_ROOT/kyc/<path>
+    relative = os.path.join('kyc', path)
+    full_path = os.path.normpath(os.path.join(media_root, relative))
+
+    # Blocage path traversal
+    if not full_path.startswith(os.path.normpath(media_root) + os.sep):
+        raise Http404
+
+    if not os.path.isfile(full_path):
+        raise Http404
+
+    user = request.user
+    role_name = getattr(getattr(user, 'role', None), 'nom_role', '')
+
+    # Agents et staff : accès libre à tous les documents KYC
+    if role_name not in _AGENT_ROLES:
+        client = getattr(user, 'client_profile', None)
+        if client is None:
+            return Response({'error': 'Accès refusé.'}, status=403)
+        # Comparer avec le chemin relatif stocké en DB (kyc/scans/YYYY/MM/file)
+        if not client.identites.filter(document_scan=relative).exists():
+            return Response({'error': 'Accès refusé.'}, status=403)
+
+    return FileResponse(open(full_path, 'rb'))  # noqa: WPS515
 
 
 @extend_schema(tags=['Clients'])

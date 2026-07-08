@@ -35,6 +35,14 @@ class SimbisaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
     final langCode = ref.watch(langProvider);
+    final isDark = themeMode == ThemeMode.dark;
+
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    ));
 
     // Material/Cupertino delegates support fr and en but not ln (Lingala) nor fr_CD specifically.
     // fr_CD resolves to fr automatically; ln falls back to fr_CD for UI chrome.

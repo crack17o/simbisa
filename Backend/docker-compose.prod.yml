@@ -1,12 +1,30 @@
-# Production VPS — à combiner avec docker-compose.yml :
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Production VPS — déploiement mono-nœud multi-services.
+# Nginx tourne sur l'HÔTE (pas dans Docker) et proxy vers le port 8000.
+#
+# Usage : docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+#   Internet
+#      │  443/80
+#   ┌──▼──────────────────────────────────┐
+#   │  Nginx HÔTE (systemd / apt)         │
+#   └──┬──────────────────────────────────┘
+#      │  127.0.0.1:8000
+#   ┌──▼──────────────────────────────────┐
+#   │  api  (Gunicorn 4 workers — Docker) │
+#   └──┬────────────────┬────────────────┘
+#      │                │
+#   ┌──▼───┐        ┌───▼──────┐
+#   │  db  │        │  redis   │   celery / celery-beat
+#   └──────┘        └──────────┘
 
 services:
   db:
-    ports: []   # MySQL non exposé publiquement
+    ports: []
+    restart: unless-stopped
 
   redis:
-    ports: []   # Redis non exposé publiquement
+    ports: []
+    restart: unless-stopped
 
   api:
     build:
@@ -19,10 +37,27 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput --clear &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+             gunicorn config.wsgi:application
+               --bind 0.0.0.0:8000
+               --workers 4
+               --worker-class gthread
+               --threads 2
+               --timeout 120
+               --max-requests 1000
+               --max-requests-jitter 100"
     ports:
-      - "8000:8000"   # Nginx sur l'hôte proxy vers ce port
+      - "127.0.0.1:8000:8000"   # Accessible uniquement depuis localhost (nginx hôte)
+    volumes:
+      - media_files:/app/media
+      - logs_data:/app/logs
+      - ./mltraining/models:/app/mltraining/models:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   celery:
     build:
@@ -33,6 +68,9 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
     command: celery -A config worker -l info -Q default,scoring,rag --concurrency 4
+    volumes:
+      - ./mltraining/models:/app/mltraining/models:ro
+      - logs_data:/app/logs
     restart: unless-stopped
 
   celery-beat:
@@ -44,4 +82,10 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
     command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - logs_data:/app/logs
     restart: unless-stopped
+
+volumes:
+  media_files:
+  logs_data:
