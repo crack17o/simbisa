@@ -116,20 +116,25 @@ def risk_rules_view(request):
 @api_view(['GET'])
 @permission_classes([IsAnalysteRisque])
 def risk_models_view(request):
+    import datetime as _dt
     models_dir = Path(settings.BASE_DIR) / 'mltraining' / 'models'
     model_files = sorted(models_dir.glob('xgboost_*.joblib'), reverse=True) if models_dir.exists() else []
 
     active = None
     if model_files:
         latest = model_files[0]
+        try:
+            rel = str(latest.relative_to(settings.BASE_DIR))
+        except ValueError:
+            rel = latest.name
         active = {
             'name': latest.stem,
             'filename': latest.name,
-            'path': str(latest.relative_to(settings.BASE_DIR)),
+            'path': rel,
             'size_kb': round(latest.stat().st_size / 1024, 1),
-            'modified_at': timezone.datetime.fromtimestamp(
-                latest.stat().st_mtime, tz=timezone.get_current_timezone(),
-            ),
+            'modified_at': _dt.datetime.fromtimestamp(
+                latest.stat().st_mtime, tz=_dt.timezone.utc,
+            ).isoformat(),
         }
 
     return Response({
@@ -159,22 +164,35 @@ def risk_model_status_view(request):
     - dernier retraining (DB)
     - prochains éléments attendus (03:00 via beat si activé)
     """
-    models_dir = Path(settings.BASE_DIR) / 'mltraining' / 'models'
-    active_path = Path(settings.ML_MODEL_PATH)
+    import datetime as _dt
+
+    active_path = Path(settings.ML_MODEL_PATH).resolve()
 
     model_file = None
     if active_path.exists():
-        st = active_path.stat()
-        model_file = {
-            'filename': active_path.name,
-            'path': str(active_path.relative_to(settings.BASE_DIR)),
-            'size_kb': round(st.st_size / 1024, 1),
-            'modified_at': timezone.datetime.fromtimestamp(
-                st.st_mtime, tz=timezone.get_current_timezone(),
-            ),
-        }
+        try:
+            st = active_path.stat()
+            try:
+                rel = str(active_path.relative_to(settings.BASE_DIR))
+            except ValueError:
+                rel = active_path.name
+            model_file = {
+                'filename': active_path.name,
+                'path': rel,
+                'size_kb': round(st.st_size / 1024, 1),
+                'modified_at': _dt.datetime.fromtimestamp(
+                    st.st_mtime, tz=_dt.timezone.utc,
+                ).isoformat(),
+            }
+        except Exception as e:
+            logger.warning(f"Impossible de lire le fichier modèle : {e}")
 
-    last_run = ModelTrainingRun.objects.first()
+    try:
+        last_run = ModelTrainingRun.objects.first()
+    except Exception as e:
+        logger.error(f"Erreur lecture ModelTrainingRun : {e}")
+        last_run = None
+
     last_run_data = None
     if last_run:
         last_run_data = {

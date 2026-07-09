@@ -14,6 +14,24 @@ from .serializers import CompteEpargneSerializer
 logger = logging.getLogger('apps.savings')
 
 
+def _trigger_rescore(client):
+    from apps.credits.models import DemandeCredit
+    from apps.credits.tasks import process_credit_scoring
+    latest = (
+        DemandeCredit.objects
+        .filter(id_client=client)
+        .exclude(statut='approuve')
+        .order_by('-date_demande')
+        .first()
+    )
+    if latest:
+        try:
+            process_credit_scoring.delay(latest.pk)
+            logger.info(f"Rescore déclenché pour demande #{latest.pk}")
+        except Exception:
+            pass
+
+
 class CompteEpargneListCreateView(generics.ListCreateAPIView):
     serializer_class = CompteEpargneSerializer
     permission_classes = [IsClient]
@@ -97,6 +115,7 @@ def depot_epargne_view(request, pk):
             description=serializer.validated_data.get('description', ''),
         )
 
+    _trigger_rescore(request.user.client_profile)
     sym = symbole(compte.devise)
     logger.info(f"Dépôt épargne {sym}{montant} — compte #{pk}")
     return Response({
@@ -207,6 +226,7 @@ def update_objectif_view(request, pk):
         update_fields.append('objectif_periodicite')
 
     compte.save(update_fields=update_fields)
+    _trigger_rescore(request.user.client_profile)
 
     new_pts = _score_pts(compte.objectif_montant, compte.objectif_periodicite, compte.solde)
     delta = round(new_pts - old_pts, 1)

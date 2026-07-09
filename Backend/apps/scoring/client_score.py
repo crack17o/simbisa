@@ -52,8 +52,13 @@ def score_pour_devise(client, devise: str) -> dict:
             source = 'demande'
 
     if score_global is None:
-        score_global = 0.0
-        source = 'aucun_historique'
+        try:
+            score_global = _score_profil_client(client, devise)
+            source = 'profil'
+        except Exception as _e:
+            logger.warning(f"Profil score échoué pour client #{client.pk} ({devise}): {_e}")
+            score_global = 0.0
+            source = 'aucun_historique'
 
     detail = {
         'devise': devise,

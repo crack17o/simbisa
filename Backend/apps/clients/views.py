@@ -199,6 +199,23 @@ def verify_kyc_view(request, pk):
 
     logger.info(f"KYC {serializer.validated_data['statut']} pour identité #{pk}")
 
+    if serializer.validated_data['statut'] == 'valide':
+        from apps.credits.models import DemandeCredit
+        from apps.credits.tasks import process_credit_scoring
+        latest = (
+            DemandeCredit.objects
+            .filter(id_client=identite.id_client)
+            .exclude(statut='approuve')
+            .order_by('-date_demande')
+            .first()
+        )
+        if latest:
+            try:
+                process_credit_scoring.delay(latest.pk)
+                logger.info(f"Rescore déclenché pour demande #{latest.pk} suite validation KYC")
+            except Exception:
+                pass
+
     return Response({
         'success': True,
         'message': f"KYC {serializer.validated_data['statut']}.",

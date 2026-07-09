@@ -605,17 +605,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (existingId.documentScan != null) ...[
-                        Expanded(
-                          child: _KycActionButton(
-                            icon: Icons.visibility_outlined,
-                            label: 'Voir la pièce',
-                            color: SimbisaColors.or,
-                            onTap: () => _openKycDoc(existingId.documentScan!),
-                          ),
+                      Expanded(
+                        child: _KycActionButton(
+                          icon: Icons.visibility_outlined,
+                          label: 'Voir la pièce',
+                          color: existingId.documentScan != null
+                              ? SimbisaColors.or
+                              : SimbisaColors.muted,
+                          onTap: existingId.documentScan != null
+                              ? () => _openKycDoc(existingId.documentScan!)
+                              : () => showToast(context,
+                                    'Aucun document joint — soumettez à nouveau en joignant votre pièce.'),
                         ),
-                        const SizedBox(width: 8),
-                      ],
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _KycActionButton(
                           icon: Icons.refresh_rounded,
