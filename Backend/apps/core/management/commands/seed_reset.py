@@ -410,10 +410,18 @@ class Command(BaseCommand):
         self.stdout.write(f'    KYC valide   {PHONE_CLIENT_KYC}  (Joëlle Tshimba — Gombe)')
         self.stdout.write(f'    Sans KYC     {PHONE_CLIENT_NO_KYC}  (Patient Kabongo — Lemba)')
         self.stdout.write('')
-        agent_count = Utilisateur.objects.filter(
-            role__nom_role='Agent de crédit', statut='actif'
-        ).count()
-        self.stdout.write(f'  Agents actifs : {agent_count} (un par commune)')
+        self.stdout.write('  Agents (un par commune) :')
+        agents = (
+            Utilisateur.objects
+            .filter(role__nom_role='Agent de crédit', statut='actif')
+            .order_by('commune_kinshasa')
+            .values('pk', 'telephone', 'commune_kinshasa', 'prenom', 'nom')
+        )
+        for a in agents:
+            commune = (a['commune_kinshasa'] or '').ljust(16)
+            self.stdout.write(
+                f'    id={a["pk"]:<5d} {a["telephone"]:>15s}  {commune}  {a["prenom"]} {a["nom"]}'
+            )
         self.stdout.write('')
         self.stdout.write('  Login : POST /api/v1/auth/login/')
         self.stdout.write('  Docs  : /api/docs/')
