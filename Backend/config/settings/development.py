@@ -3,6 +3,10 @@ from .base import *  # noqa: F403, F401
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+# Derrière un reverse proxy HTTPS (nginx) : faire confiance au header X-Forwarded-Proto
+# pour que Django génère des URLs media en https:// et non http://
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 INSTALLED_APPS += ['debug_toolbar']  # noqa: F405
 MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE  # noqa: F405
 INTERNAL_IPS = ['127.0.0.1']
