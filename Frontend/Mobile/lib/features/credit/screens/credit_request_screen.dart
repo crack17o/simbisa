@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:simbisa/core/models/credit_models.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simbisa/core/constants/routes.dart';
 import 'package:simbisa/core/services/api_client.dart';
 import 'package:simbisa/core/services/credit_service.dart';
 import 'package:simbisa/core/theme/app_theme.dart';
 import 'package:simbisa/core/theme/widgets.dart';
+import 'package:simbisa/core/utils/toast.dart';
 
 class CreditRequestScreen extends StatefulWidget {
   const CreditRequestScreen({super.key});
@@ -19,7 +21,6 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
   String? _motif;
   bool _loading = false;
   String? _error;
-  CreditSubmitResult? _decision;
 
   final _motifs = [
     'Achat de stock commercial',
@@ -42,11 +43,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _decision = null;
-      _error = null;
-    });
+    setState(() { _loading = true; _error = null; });
 
     try {
       final result = await _service.submitRequest(
@@ -55,22 +52,34 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
         motif: _motif!,
       );
       if (!mounted) return;
-      setState(() {
-        _decision = result;
-        _loading = false;
-      });
+
+      final String toastMsg;
+      if (result.timedOut) {
+        toastMsg = 'Demande enregistrée. Consultez « Mes crédits » sous peu.';
+      } else if (result.isApproved) {
+        toastMsg = 'Crédit approuvé ! Consultez « Mes crédits ».';
+      } else if (result.isRejected) {
+        toastMsg = 'Demande rejetée. Consultez « Mon score & IA » pour plus de détails.';
+      } else {
+        toastMsg = 'Demande soumise. Un agent va analyser votre dossier.';
+      }
+
+      final bool isSuccess = result.isApproved || result.isPending || result.timedOut;
+      if (isSuccess) {
+        showToastSuccess(context, toastMsg);
+      } else {
+        showToastWarning(context, toastMsg);
+      }
+
+      _amountCtrl.clear();
+      setState(() { _duree = 3; _motif = null; _error = null; _loading = false; });
+      context.go(AppRoutes.dashboard);
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _loading = false;
-      });
+      setState(() { _error = e.message; _loading = false; });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = 'Soumission impossible. Réessayez.';
-        _loading = false;
-      });
+      setState(() { _error = 'Soumission impossible. Réessayez.'; _loading = false; });
     }
   }
 
@@ -92,10 +101,6 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
         child: Column(
           children: [
             _buildForm(),
-            if (_decision != null) ...[
-              const SizedBox(height: 20),
-              _buildDecisionBanner(),
-            ],
             const SizedBox(height: 32),
           ],
         ),
@@ -260,108 +265,4 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
     );
   }
 
-  Widget _buildDecisionBanner() {
-    final d = _decision!;
-    final amount = double.tryParse(_amountCtrl.text) ?? 0;
-
-    if (d.timedOut) {
-      return NeuCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Demande enregistrée', style: TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            Text(
-              'L\'analyse prend plus de temps que prévu. Consultez « Mes crédits » dans quelques instants.',
-              style: SimbisaText.body(13, color: SimbisaColors.muted),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final isApproved = d.isApproved;
-    final isRejected = d.isRejected;
-    final isPending = d.isPending;
-    final color = isApproved
-        ? SimbisaColors.success
-        : isRejected
-            ? SimbisaColors.danger
-            : SimbisaColors.warning;
-    final title = isApproved
-        ? 'Crédit approuvé'
-        : isRejected
-            ? 'Demande rejetée'
-            : 'En attente de validation';
-
-    return NeuCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isApproved
-                    ? Icons.check_circle_rounded
-                    : isRejected
-                        ? Icons.cancel_rounded
-                        : Icons.hourglass_top_rounded,
-                color: color,
-                size: 28,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700)),
-                    Text('\$${amount.toStringAsFixed(0)} · $_duree mois', style: SimbisaText.body(12, color: SimbisaColors.muted)),
-                  ],
-                ),
-              ),
-              StatusBadge.fromStatus(d.decision ?? d.statut),
-            ],
-          ),
-          if (d.motif != null && d.motif!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            NeuInset(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('MOTIF', style: SimbisaText.label()),
-                  const SizedBox(height: 6),
-                  Text(d.motif!, style: SimbisaText.body(13)),
-                ],
-              ),
-            ),
-          ],
-          if (d.explicationIa != null && d.explicationIa!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            NeuInset(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.auto_awesome_rounded, color: SimbisaColors.orLight, size: 14),
-                      const SizedBox(width: 6),
-                      Text('ANALYSE IA (RAG)', style: SimbisaText.label(color: SimbisaColors.orLight)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(d.explicationIa!, style: SimbisaText.body(12).copyWith(height: 1.6)),
-                ],
-              ),
-            ),
-          ],
-          if (isPending) ...[
-            const SizedBox(height: 12),
-            Text('Un agent Rawbank validera votre dossier sous peu.', style: SimbisaText.body(12, color: SimbisaColors.muted)),
-          ],
-        ],
-      ),
-    );
-  }
 }

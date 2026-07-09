@@ -86,11 +86,15 @@ class Client(TimestampedModel):
 
     @property
     def plafond_credit_usd(self) -> int:
-        return self.PLAFONDS_PAR_NIVEAU[self.niveau_compte]['max_usd']
+        from apps.core.models import PlatformConfig
+        cfg = PlatformConfig.load()
+        return cfg.get_niveau_plafond(self.niveau_compte).get('max_usd', self.PLAFONDS_PAR_NIVEAU[self.niveau_compte]['max_usd'])
 
     @property
     def plafond_duree_mois(self) -> int:
-        return self.PLAFONDS_PAR_NIVEAU[self.niveau_compte]['max_mois']
+        from apps.core.models import PlatformConfig
+        cfg = PlatformConfig.load()
+        return cfg.get_niveau_plafond(self.niveau_compte).get('max_mois', self.PLAFONDS_PAR_NIVEAU[self.niveau_compte]['max_mois'])
 
 
 class Identite(TimestampedModel):

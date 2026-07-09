@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Settings, LogOut, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import Logo from '@/components/atoms/Logo'
@@ -9,16 +9,25 @@ import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
 import { getNavItems, getRoleLabel } from '@/constants/navigation'
 import { ROLES } from '@/constants/roles'
+import { getClientStats } from '@/api/clients'
 
 export default function Sidebar({ user }) {
   const [collapsed, setCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [pendingKyc, setPendingKyc] = useState(0)
   const { logout } = useAuth()
   const { t } = useLang()
   const navigate = useNavigate()
 
   const navItems = getNavItems(user?.role)
   const showSettings = user?.role === ROLES.ADMIN
+
+  useEffect(() => {
+    if (user?.role !== ROLES.AGENT && user?.role !== ROLES.MANAGER) return
+    getClientStats()
+      .then(res => setPendingKyc(res.data?.pending_kyc ?? 0))
+      .catch(() => {})
+  }, [user?.role])
 
   const handleLogout = async () => {
     if (loggingOut) return
@@ -60,7 +69,13 @@ export default function Sidebar({ user }) {
 
       <nav className="flex-1 overflow-y-auto p-3 flex flex-col gap-1">
         {navItems.map(item => (
-          <NavItem key={item.to} {...item} label={t(item.key) || item.label} collapsed={collapsed} />
+          <NavItem
+            key={item.to}
+            {...item}
+            label={t(item.key) || item.label}
+            collapsed={collapsed}
+            badge={item.to === '/agent/clients' ? pendingKyc : undefined}
+          />
         ))}
       </nav>
 

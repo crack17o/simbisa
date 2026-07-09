@@ -29,7 +29,7 @@ export class ApiError extends Error {
 
 export function getStoredAuth() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = sessionStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
@@ -37,8 +37,8 @@ export function getStoredAuth() {
 }
 
 export function setStoredAuth(user) {
-  if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-  else localStorage.removeItem(STORAGE_KEY)
+  if (user) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  else sessionStorage.removeItem(STORAGE_KEY)
 }
 
 export async function refreshAccessToken(refreshToken) {

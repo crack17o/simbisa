@@ -170,6 +170,7 @@ class NeuTextField extends StatelessWidget {
   final String? label;
   final String? hint;
   final Widget? prefixIcon;
+  final Widget? prefix;
   final Widget? suffixIcon;
   final TextEditingController? controller;
   final TextInputType? keyboardType;
@@ -183,6 +184,7 @@ class NeuTextField extends StatelessWidget {
     this.label,
     this.hint,
     this.prefixIcon,
+    this.prefix,
     this.suffixIcon,
     this.controller,
     this.keyboardType,
@@ -222,6 +224,7 @@ class NeuTextField extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: SimbisaText.body(14, color: mutedColor.withValues(alpha: 0.5)),
+              prefix: prefix,
               prefixIcon: prefixIcon != null
                   ? IconTheme(data: IconThemeData(color: mutedColor, size: 18), child: prefixIcon!)
                   : null,

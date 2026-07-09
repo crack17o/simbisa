@@ -207,6 +207,55 @@ def plafonds_view(request):
 
 
 @extend_schema(tags=['Manager'])
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsManager])
+def niveau_plafonds_view(request):
+    """Plafonds crédit par niveau de compte (standard, pro, pro_plus, premium)."""
+    config = PlatformConfig.load()
+    niveaux = ['standard', 'pro', 'pro_plus', 'premium']
+
+    if request.method == 'GET':
+        data = {n: config.get_niveau_plafond(n) for n in niveaux}
+        return Response({'success': True, 'data': data})
+
+    plafonds = dict(config.niveau_plafonds)
+    for niveau in niveaux:
+        if niveau not in request.data:
+            continue
+        entry = request.data[niveau]
+        max_usd = entry.get('max_usd')
+        max_mois = entry.get('max_mois')
+        if max_usd is not None:
+            try:
+                max_usd = int(max_usd)
+            except (TypeError, ValueError):
+                return Response({'success': False, 'error': {'message': f'{niveau}.max_usd invalide.'}}, status=400)
+            if max_usd < 1:
+                return Response({'success': False, 'error': {'message': f'{niveau}.max_usd doit être ≥ 1.'}}, status=400)
+        if max_mois is not None:
+            try:
+                max_mois = int(max_mois)
+            except (TypeError, ValueError):
+                return Response({'success': False, 'error': {'message': f'{niveau}.max_mois invalide.'}}, status=400)
+            if max_mois < 1:
+                return Response({'success': False, 'error': {'message': f'{niveau}.max_mois doit être ≥ 1.'}}, status=400)
+
+        current = config.get_niveau_plafond(niveau)
+        plafonds[niveau] = {
+            'max_usd': max_usd if max_usd is not None else current['max_usd'],
+            'max_mois': max_mois if max_mois is not None else current['max_mois'],
+        }
+
+    config.niveau_plafonds = plafonds
+    config.updated_by = request.user
+    config.save()
+    logger.info(f"Plafonds par niveau mis à jour par {request.user.telephone}")
+
+    data = {n: config.get_niveau_plafond(n) for n in niveaux}
+    return Response({'success': True, 'message': 'Plafonds par niveau enregistrés.', 'data': data})
+
+
+@extend_schema(tags=['Manager'])
 @api_view(['GET'])
 @permission_classes([IsManager])
 def manager_dashboard_view(request):

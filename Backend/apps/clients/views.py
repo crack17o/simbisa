@@ -148,6 +148,21 @@ def serve_kyc_document(request, path):
 
 @extend_schema(tags=['Clients'])
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def client_stats_view(request):
+    """Stats légères pour la sidebar (badge) — filtre sur le portefeuille de l'agent."""
+    from apps.clients.services.territoire import filter_clients_queryset
+    qs = Client.objects.prefetch_related('identites')
+    qs = filter_clients_queryset(qs, request.user)
+    pending_kyc = sum(
+        1 for c in qs
+        if any(i.statut_verification == 'en_attente' for i in c.identites.all())
+    )
+    return Response({'success': True, 'data': {'total': qs.count(), 'pending_kyc': pending_kyc}})
+
+
+@extend_schema(tags=['Clients'])
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def communes_list_view(request):
     data = [{'code': code, 'label': label} for code, label in KINSHASA_COMMUNES]

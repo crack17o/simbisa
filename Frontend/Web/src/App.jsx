@@ -25,6 +25,7 @@ import Wallets from '@/pages/Wallets'
 import AgentDashboard from '@/pages/AgentDashboard'
 import AgentRequests from '@/pages/agent/AgentRequests'
 import AgentClients from '@/pages/agent/AgentClients'
+import ClientDetail from '@/pages/agent/ClientDetail'
 
 import ManagerDashboard from '@/pages/manager/ManagerDashboard'
 import ManagerExceptions from '@/pages/manager/ManagerExceptions'
@@ -33,6 +34,7 @@ import ManagerPlafonds from '@/pages/manager/ManagerPlafonds'
 import RiskDashboard from '@/pages/risk/RiskDashboard'
 import RiskRules from '@/pages/risk/RiskRules'
 import RiskModels from '@/pages/risk/RiskModels'
+import RiskDocuments from '@/pages/risk/RiskDocuments'
 
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminUsers from '@/pages/admin/AdminUsers'
@@ -97,6 +99,11 @@ function AppRoutes() {
           <AgentClients />
         </ProtectedRoute>
       } />
+      <Route path="/agent/clients/:id" element={
+        <ProtectedRoute roles={[ROLES.AGENT, ROLES.MANAGER]}>
+          <ClientDetail />
+        </ProtectedRoute>
+      } />
       <Route path="/agent/requests" element={
         <ProtectedRoute roles={[ROLES.AGENT, ROLES.MANAGER]}>
           <AgentRequests />
@@ -112,6 +119,7 @@ function AppRoutes() {
       <Route path="/risk" element={<ProtectedRoute roles={[ROLES.ANALYST]}><RiskDashboard /></ProtectedRoute>} />
       <Route path="/risk/rules" element={<ProtectedRoute roles={[ROLES.ANALYST]}><RiskRules /></ProtectedRoute>} />
       <Route path="/risk/models" element={<ProtectedRoute roles={[ROLES.ANALYST]}><RiskModels /></ProtectedRoute>} />
+      <Route path="/risk/documents" element={<ProtectedRoute roles={[ROLES.ANALYST]}><RiskDocuments /></ProtectedRoute>} />
 
       {/* Administrateur */}
       <Route path="/admin" element={<ProtectedRoute roles={[ROLES.ADMIN]}><AdminDashboard /></ProtectedRoute>} />

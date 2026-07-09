@@ -20,3 +20,11 @@ export function getPlafonds() {
 export function updatePlafonds(data) {
   return apiRequest('/api/v1/manager/plafonds/', { method: 'PATCH', body: data })
 }
+
+export function getNiveauPlafonds() {
+  return apiRequest('/api/v1/manager/plafonds/niveaux/')
+}
+
+export function updateNiveauPlafonds(data) {
+  return apiRequest('/api/v1/manager/plafonds/niveaux/', { method: 'PATCH', body: data })
+}

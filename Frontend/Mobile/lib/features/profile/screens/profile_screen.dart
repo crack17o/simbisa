@@ -90,6 +90,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void initState() {
     super.initState();
     _mfaEnabled = Session.current?.mfaEnabled ?? false;
+    _oldPwdCtrl.addListener(() => setState(() {}));
     _newPwdCtrl.addListener(() => setState(() {}));
     _load();
   }
@@ -993,6 +994,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       onPressed: toggle,
     );
 
+    final oldFilled = _oldPwdCtrl.text.isNotEmpty;
+
     return NeuCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1007,27 +1010,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             obscureText: !_showOldPwd,
             suffixIcon: eyeBtn(_showOldPwd, () => setState(() => _showOldPwd = !_showOldPwd)),
           ),
-          const SizedBox(height: 12),
-          NeuTextField(
-            label: 'Nouveau mot de passe',
-            hint: '••••••••',
-            prefixIcon: const Icon(Icons.lock_outline),
-            controller: _newPwdCtrl,
-            obscureText: !_showNewPwd,
-            suffixIcon: eyeBtn(_showNewPwd, () => setState(() => _showNewPwd = !_showNewPwd)),
-          ),
-          _PwdStrength(password: _newPwdCtrl.text),
-          const SizedBox(height: 12),
-          NeuTextField(
-            label: 'Confirmer le nouveau mot de passe',
-            hint: '••••••••',
-            prefixIcon: const Icon(Icons.lock_outline),
-            controller: _newPwd2Ctrl,
-            obscureText: !_showNewPwd2,
-            suffixIcon: eyeBtn(_showNewPwd2, () => setState(() => _showNewPwd2 = !_showNewPwd2)),
-          ),
-          const SizedBox(height: 16),
-          NeuButton(width: double.infinity, loading: _changingPwd, onTap: _changePassword, child: const Text('Mettre à jour')),
+          // Les champs nouveau mdp ne s'affichent que quand le champ actuel est rempli
+          if (oldFilled) ...[
+            const SizedBox(height: 12),
+            NeuTextField(
+              label: 'Nouveau mot de passe',
+              hint: '••••••••',
+              prefixIcon: const Icon(Icons.lock_outline),
+              controller: _newPwdCtrl,
+              obscureText: !_showNewPwd,
+              suffixIcon: eyeBtn(_showNewPwd, () => setState(() => _showNewPwd = !_showNewPwd)),
+            ),
+            _PwdStrength(password: _newPwdCtrl.text),
+            const SizedBox(height: 12),
+            NeuTextField(
+              label: 'Confirmer le nouveau mot de passe',
+              hint: '••••••••',
+              prefixIcon: const Icon(Icons.lock_outline),
+              controller: _newPwd2Ctrl,
+              obscureText: !_showNewPwd2,
+              suffixIcon: eyeBtn(_showNewPwd2, () => setState(() => _showNewPwd2 = !_showNewPwd2)),
+            ),
+            const SizedBox(height: 16),
+            NeuButton(
+              width: double.infinity,
+              loading: _changingPwd,
+              onTap: _changePassword,
+              child: const Text('Mettre à jour'),
+            ),
+          ],
         ],
       ),
     );
@@ -1321,20 +1332,23 @@ class _PwdStrength extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (score > 0)
               Text(_pwdLabels[score - 1], style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600))
             else
               const SizedBox.shrink(),
-            Row(
-              children: List.generate(_pwdChecks.length, (i) => Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text(
+            const Spacer(),
+            Flexible(
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8.0,
+                runSpacing: 2.0,
+                children: List.generate(_pwdChecks.length, (i) => Text(
                   '${results[i] ? '✓' : '·'} ${_pwdChecks[i].$1}',
                   style: TextStyle(fontSize: 10, color: results[i] ? const Color(0xFF22C55E) : SimbisaColors.muted),
-                ),
-              )),
+                )),
+              ),
             ),
           ],
         ),

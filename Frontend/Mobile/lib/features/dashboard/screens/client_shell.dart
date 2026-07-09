@@ -17,8 +17,10 @@ class ClientShell extends StatefulWidget {
 class _ClientShellState extends State<ClientShell> {
   late int _currentIndex;
   double _pageOpacity = 1.0;
+  // Incrémenté à chaque activation d'un onglet pour forcer le rebuild (initState) de la page
+  final List<int> _refreshKeys = [0, 0, 0, 0, 0];
 
-  static const _pages = [
+  static const _pageWidgets = [
     DashboardScreen(),
     CreditRequestScreen(),
     SavingsScreen(),
@@ -37,7 +39,7 @@ class _ClientShellState extends State<ClientShell> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, _pages.length - 1);
+    _currentIndex = widget.initialIndex.clamp(0, _pageWidgets.length - 1);
   }
 
   @override
@@ -47,7 +49,13 @@ class _ClientShellState extends State<ClientShell> {
         opacity: _pageOpacity,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        child: IndexedStack(index: _currentIndex, children: _pages),
+        child: IndexedStack(
+          index: _currentIndex,
+          children: List.generate(_pageWidgets.length, (i) => KeyedSubtree(
+            key: ValueKey('tab_${i}_${_refreshKeys[i]}'),
+            child: _pageWidgets[i],
+          )),
+        ),
       ),
       bottomNavigationBar: _buildNavBar(),
     );
@@ -60,6 +68,7 @@ class _ClientShellState extends State<ClientShell> {
     await Future.delayed(const Duration(milliseconds: 110));
     if (!mounted) return;
     setState(() {
+      _refreshKeys[index]++;
       _currentIndex = index;
       _pageOpacity = 1.0;
     });

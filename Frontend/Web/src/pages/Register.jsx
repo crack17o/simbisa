@@ -4,6 +4,7 @@ import { Phone, Lock, User, Mail, MapPin, ArrowRight, ArrowLeft, Briefcase, Cale
 import { toast } from 'sonner'
 import AuthLayout from '@/components/templates/AuthLayout'
 import FormField from '@/components/molecules/FormField'
+import PhoneInput from '@/components/molecules/PhoneInput'
 import Button from '@/components/atoms/Button'
 import { useAuth } from '@/context/AuthContext'
 import { getHomeRoute } from '@/constants/roles'
@@ -123,8 +124,7 @@ export default function Register() {
         {/* ── ÉTAPE 1 : Identité ── */}
         {step === 1 && (
           <div className="flex flex-col gap-4">
-            <FormField label="Téléphone (+243)" name="telephone" type="tel" icon={Phone}
-              placeholder="+243 8XX XXX XXX" value={form.telephone}
+            <PhoneInput name="telephone" value={form.telephone}
               onChange={set('telephone')} required />
 
             <div className="grid grid-cols-2 gap-3">

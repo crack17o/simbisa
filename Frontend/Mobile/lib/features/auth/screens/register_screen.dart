@@ -62,20 +62,23 @@ class _PasswordStrength extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (score > 0)
               Text(_strengthLabels[score - 1], style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600))
             else
               const SizedBox.shrink(),
-            Row(
-              children: List.generate(_pwdRules.length, (i) => Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text(
+            const Spacer(),
+            Flexible(
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8.0,
+                runSpacing: 2.0,
+                children: List.generate(_pwdRules.length, (i) => Text(
                   '${results[i] ? '✓' : '·'} ${_pwdRules[i].label}',
                   style: TextStyle(fontSize: 10, color: results[i] ? const Color(0xFF22C55E) : SimbisaColors.muted),
-                ),
-              )),
+                )),
+              ),
             ),
           ],
         ),
@@ -270,9 +273,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ── Étape 1 : Identité ──────────────────────────────────────────────────────
   List<Widget> _buildStep1(Color orColor, Color mutedColor) => [
     NeuTextField(
-      label: 'Téléphone (+243)',
-      hint: '+243 8XX XXX XXX',
-      prefixIcon: const Icon(Icons.phone_outlined),
+      label: 'Téléphone',
+      hint: '8XX XXX XXX',
+      prefix: const Text('🇨🇩 +243 ', style: TextStyle(fontSize: 13, color: SimbisaColors.muted, fontWeight: FontWeight.w600)),
       controller: _phoneCtrl,
       keyboardType: TextInputType.phone,
       onChanged: (_) => _updateMmHint(),

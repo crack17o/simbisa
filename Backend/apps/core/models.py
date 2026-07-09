@@ -53,6 +53,11 @@ class PlatformConfig(models.Model):
         validators=[MinValueValidator(Decimal('1'))],
         verbose_name='Plafond validation responsable (USD)',
     )
+    niveau_plafonds = models.JSONField(
+        default=dict,
+        verbose_name='Plafonds par niveau de compte',
+        help_text='Ex : {"standard": {"max_usd": 300, "max_mois": 6}, ...}',
+    )
     mfa_obligatoire_agents = models.BooleanField(default=False)
     maintenance_mode = models.BooleanField(default=False)
     session_timeout_minutes = models.PositiveSmallIntegerField(default=30)
@@ -77,7 +82,18 @@ class PlatformConfig(models.Model):
     def __str__(self):
         return f"1 USD = {self.cdf_per_usd} CDF"
 
+    _NIVEAU_DEFAULTS = {
+        'standard': {'max_usd': 300,   'max_mois': 6},
+        'pro':      {'max_usd': 700,   'max_mois': 9},
+        'pro_plus': {'max_usd': 1200,  'max_mois': 12},
+        'premium':  {'max_usd': 2500,  'max_mois': 12},
+    }
+
     @classmethod
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=1, defaults={'cdf_per_usd': 2250})
         return obj
+
+    def get_niveau_plafond(self, niveau: str) -> dict:
+        """Retourne le plafond pour un niveau (DB ou valeur par défaut)."""
+        return self.niveau_plafonds.get(niveau) or self._NIVEAU_DEFAULTS.get(niveau, {'max_usd': 300, 'max_mois': 6})

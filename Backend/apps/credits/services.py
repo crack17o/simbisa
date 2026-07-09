@@ -73,6 +73,11 @@ def _create_credit_from_demande(demande: DemandeCredit, score_global: float) -> 
     else:
         taux = Decimal('3.5')
 
+    # Remise fidélité selon le niveau du compte (aligné avec scoring/services.py)
+    _remises = {'pro': Decimal('0.25'), 'pro_plus': Decimal('0.5'), 'premium': Decimal('0.75')}
+    niveau = demande.id_client.niveau_compte
+    taux = max(Decimal('1.5'), taux - _remises.get(niveau, Decimal('0')))
+
     credit = Credit.objects.create(
         id_demande=demande,
         montant_accorde=demande.montant_demande,

@@ -4,6 +4,7 @@ import { Phone, Lock, Eye, EyeOff, Shield, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import AuthLayout from '@/components/templates/AuthLayout'
 import FormField from '@/components/molecules/FormField'
+import PhoneInput from '@/components/molecules/PhoneInput'
 import Button from '@/components/atoms/Button'
 import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
@@ -153,16 +154,12 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormField
+          <PhoneInput
             name="phone"
             label="Numéro de téléphone"
-            type="tel"
-            icon={Phone}
-            placeholder="+243 8XX XXX XXX"
             value={form.phone}
             error={fieldErrors.phone}
             onChange={handleChange('phone')}
-            onBlur={handleBlur('phone')}
           />
 
           <FormField

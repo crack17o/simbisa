@@ -170,8 +170,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
           NeuTextField(
             label: 'Numéro de téléphone',
-            hint: '+243 8XX XXX XXX',
-            prefixIcon: const Icon(Icons.phone_outlined),
+            hint: '8XX XXX XXX',
+            prefix: const Text('🇨🇩 +243 ', style: TextStyle(fontSize: 13, color: SimbisaColors.muted, fontWeight: FontWeight.w600)),
             controller: _phoneCtrl,
             keyboardType: TextInputType.phone,
           ),

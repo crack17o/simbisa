@@ -58,6 +58,9 @@ export default function Dashboard() {
 
   const activeCredit = credits.find(c => c.credit?.statut === 'en_cours')
   const recentCredits = credits.slice(0, 3)
+  // Mon Score = score_profil : calculé depuis le profil MM/comportemental (toujours frais)
+  // Score global = score_client : moyenne agrégée USD/CDF (inclut les décisions crédit si disponibles)
+  const myScore = score?.score_profil ?? score?.score_client ?? 0
   const globalScore = score?.score_client ?? 0
 
   if (loading) {
@@ -134,7 +137,7 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-          <ScoreRing score={Math.round(globalScore)} size={100} label={t('dash.my_score')} />
+          <ScoreRing score={Math.round(myScore)} size={100} label={t('dash.my_score')} />
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

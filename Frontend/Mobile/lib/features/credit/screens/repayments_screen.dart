@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simbisa/core/constants/routes.dart';
 import 'package:simbisa/core/models/credit_models.dart';
 import 'package:simbisa/core/services/api_client.dart';
 import 'package:simbisa/core/services/credit_service.dart';
@@ -51,7 +53,7 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
     });
     try {
       final credits = await _service.fetchMyCredits();
-      final actifs = credits.where((c) => c.credit != null && c.credit!.statut == 'actif').toList();
+      final actifs = credits.where((c) => c.credit != null && c.credit!.statut == 'en_cours').toList();
       if (!mounted) return;
       setState(() {
         _credits = actifs;
@@ -86,9 +88,9 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
         modePaiement: _mode,
       );
       if (!mounted) return;
-      showToast(context, 'Remboursement de ${formatMoney(_selected!.symbole, montant)} enregistré.');
+      showToastSuccess(context, 'Remboursement de ${formatMoney(_selected!.symbole, montant)} enregistré.');
       _montantCtrl.clear();
-      _load();
+      context.go(AppRoutes.dashboard);
     } on ApiException catch (e) {
       if (mounted) showToastError(context, e.message);
     } finally {

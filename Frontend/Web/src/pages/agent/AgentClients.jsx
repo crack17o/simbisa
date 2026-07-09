@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { UserPlus, Users, FileCheck, Pencil, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import FormField from '@/components/molecules/FormField'
+import PhoneInput from '@/components/molecules/PhoneInput'
 import Button from '@/components/atoms/Button'
 import Badge from '@/components/atoms/Badge'
 import { useAuth } from '@/context/AuthContext'
@@ -21,6 +23,7 @@ const emptyEdit = {
 
 export default function AgentClients() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const isAgent = user?.role === ROLES.AGENT
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
@@ -128,7 +131,7 @@ export default function AgentClients() {
 
         {showForm && isAgent && (
           <form onSubmit={handleCreate} className="neu-flat p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Téléphone (+243)" value={form.telephone} required
+            <PhoneInput name="telephone" value={form.telephone} required
               onChange={e => setForm(p => ({ ...p, telephone: e.target.value }))} />
             <FormField label="Prénom" value={form.prenom} required
               onChange={e => setForm(p => ({ ...p, prenom: e.target.value }))} />
@@ -218,7 +221,10 @@ export default function AgentClients() {
               const lastId = c.identites?.[c.identites.length - 1]
               const kyc = lastId?.statut_verification || (c.kyc_valid ? 'valide' : 'en_attente')
               return (
-                <div key={c.id} className="neu-flat p-4 flex flex-wrap items-center justify-between gap-3">
+                <div key={c.id}
+                  className="neu-flat p-4 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:bg-panel/60 transition-colors"
+                  onClick={() => navigate(`/agent/clients/${c.id}`)}
+                >
                   <div>
                     <p className="font-medium text-blanc">{c.utilisateur?.full_name}</p>
                     <p className="text-xs text-muted">

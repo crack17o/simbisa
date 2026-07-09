@@ -44,8 +44,19 @@ def _motif_sensible(demande) -> str:
     return ' + '.join(motifs) if motifs else 'Dossier sensible'
 
 
+def _demande_ia_fields(demande) -> dict:
+    if hasattr(demande, 'decision') and demande.decision:
+        d = demande.decision
+        return {
+            'recommandation_ia': getattr(d, 'recommandation_ia', None),
+            'explication_ia': getattr(d, 'explication_ia', '') or '',
+        }
+    return {'recommandation_ia': None, 'explication_ia': ''}
+
+
 def serialize_demande(demande, include_sensible_motif: bool = False) -> dict:
     client = demande.id_client
+    ia = _demande_ia_fields(demande)
     item = {
         'demande_id': demande.pk,
         'ref': f'#CR-{demande.pk:03d}',
@@ -61,6 +72,8 @@ def serialize_demande(demande, include_sensible_motif: bool = False) -> dict:
         'score': _demande_score(demande),
         'risque': _demande_risque(demande),
         'sensible': is_demande_sensible(demande),
+        'recommandation_ia': ia['recommandation_ia'],
+        'explication_ia': ia['explication_ia'],
     }
     if include_sensible_motif and item['sensible']:
         item['motif_sensible'] = _motif_sensible(demande)

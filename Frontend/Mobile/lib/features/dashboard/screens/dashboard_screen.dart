@@ -35,7 +35,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _error;
   String _displayName = '';
   bool _kycValid = false;
-  int _score = 0;
+  int _scoreProfil = 0;   // Mon Score — toujours calculé depuis le profil MM/comportemental
+  int _scoreGlobal = 0;   // Score global — moyenne USD/CDF incluant les décisions crédit
   String _riskLevel = '—';
   SavingsAccount? _savings;
   List<CreditDemandeItem> _credits = [];
@@ -78,7 +79,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ? profile.fullName
             : (Session.current?.fullName ?? 'Client');
         _kycValid = profile.kycValid;
-        _score = scoreData.scoreClient.round();
+        _scoreProfil = scoreData.scoreProfil.round();
+        _scoreGlobal = scoreData.scoreClient.round();
         _riskLevel = riskLabel(scoreData.niveauRisque ?? profile.niveauRisque);
         _savings = savings;
         _credits = credits;
@@ -382,7 +384,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
           ),
-          ScoreRing(score: _score, size: 90, label: Tr.of(lang, 'dash.my_score')),
+          ScoreRing(score: _scoreProfil, size: 90, label: Tr.of(lang, 'dash.my_score')),
         ],
       ),
     );
@@ -423,7 +425,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       _StatItem(
         label: Tr.of(lang, 'dash.global_score'),
-        value: '$_score/100',
+        value: '$_scoreGlobal/100',
         sub: '${Tr.of(lang, 'dash.risk_level')} ${_riskLevel.toLowerCase()}',
         icon: Icons.trending_up_rounded,
         color: SimbisaColors.teal,

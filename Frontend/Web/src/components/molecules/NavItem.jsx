@@ -2,7 +2,7 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import clsx from 'clsx'
 
-export default function NavItem({ to, icon: Icon, label, collapsed = false }) {
+export default function NavItem({ to, icon: Icon, label, collapsed = false, badge }) {
   return (
     <NavLink
       to={to}
@@ -32,12 +32,26 @@ export default function NavItem({ to, icon: Icon, label, collapsed = false }) {
               style={{ background: 'linear-gradient(180deg, #F0C040, #D4AF37)' }}
             />
           )}
-          <Icon
-            size={18}
-            style={isActive ? { color: '#D4AF37', filter: 'drop-shadow(0 0 4px rgba(212,175,55,0.5))' } : {}}
-          />
+          <div className="relative shrink-0">
+            <Icon
+              size={18}
+              style={isActive ? { color: '#D4AF37', filter: 'drop-shadow(0 0 4px rgba(212,175,55,0.5))' } : {}}
+            />
+            {badge > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full
+                               bg-danger text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                {badge > 99 ? '99+' : badge}
+              </span>
+            )}
+          </div>
           {!collapsed && (
-            <span className="text-sm font-medium truncate">{label}</span>
+            <span className="text-sm font-medium truncate flex-1">{label}</span>
+          )}
+          {!collapsed && badge > 0 && (
+            <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-danger/20 text-danger
+                             text-[10px] font-semibold flex items-center justify-center">
+              {badge > 99 ? '99+' : badge}
+            </span>
           )}
         </>
       )}

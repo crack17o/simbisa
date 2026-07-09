@@ -47,6 +47,14 @@ export function deleteClientAdmin(clientId) {
  * Ouvre un document KYC dans un nouvel onglet en passant le JWT en header.
  * Retourne une blob URL valide pendant 30 s (révoquée automatiquement).
  */
+export function getClientStats() {
+  return apiRequest('/api/v1/clients/stats/')
+}
+
+export function getClientById(clientId) {
+  return apiRequest(`/api/v1/clients/${clientId}/`)
+}
+
 export async function fetchKycFile(documentUrl) {
   const blob = await fetchAuthFile(documentUrl)
   const blobUrl = URL.createObjectURL(blob)

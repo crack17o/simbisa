@@ -7,7 +7,8 @@ from drf_spectacular.utils import extend_schema
 
 from apps.core.permissions import IsClient, IsAgent
 from .services import ScoringOrchestrator
-from .client_score import score_client_agrege
+from .client_score import score_client_agrege, _score_profil_client
+from apps.core.currency import DEVISES
 
 logger = logging.getLogger('scoring')
 
@@ -83,12 +84,20 @@ def my_score_view(request):
 
     agrege = score_client_agrege(client)
 
+    # Score de profil pur — toujours calculé depuis MM + comportemental, sans décision crédit
+    try:
+        profil_scores = [_score_profil_client(client, d) for d in DEVISES]
+        score_profil = round(sum(profil_scores) / len(profil_scores), 2)
+    except Exception:
+        score_profil = agrege['score_client']
+
     derniere_demande = None
     if agrege.get('derniere_demande_id'):
         derniere_demande = DemandeCredit.objects.filter(pk=agrege['derniere_demande_id']).first()
 
     data = {
         **agrege,
+        'score_profil': score_profil,
         'detail_derniere_demande': build_score_response(derniere_demande) if derniere_demande else None,
     }
 

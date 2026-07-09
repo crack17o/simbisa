@@ -21,11 +21,12 @@ DEMO_PASSWORD = 'Test123!'
 TEL_ADMIN    = '+243900000000'
 TEL_AGENT1   = '+243900000002'   # Gombe
 TEL_AGENT2   = '+243900000006'   # Limete
+TEL_AGENT3   = '+243900000007'   # Bandal
 TEL_MANAGER  = '+243900000003'
 TEL_ANALYSTE = '+243900000004'
 TEL_AUDITEUR = '+243900000005'
 
-DEMO_STAFF_PHONES = [TEL_ADMIN, TEL_AGENT1, TEL_AGENT2, TEL_MANAGER, TEL_ANALYSTE, TEL_AUDITEUR]
+DEMO_STAFF_PHONES = [TEL_ADMIN, TEL_AGENT1, TEL_AGENT2, TEL_AGENT3, TEL_MANAGER, TEL_ANALYSTE, TEL_AUDITEUR]
 
 # 20 clients demo — préfixes réseau DRC pour détecter auto l'opérateur
 CLIENT_SPECS = [
@@ -140,7 +141,7 @@ class Command(BaseCommand):
         config.usd_agent_auto_max = Decimal('400.00')
         config.usd_manager_max = Decimal('1200.00')
         config.save()
-        set_cdf_per_usd(2500, user=None)
+        set_cdf_per_usd(2250, user=None)
         self.stdout.write('  [OK] Taux 2500 CDF/USD + plafonds globaux crédit')
 
     # ------------------------------------------------------------------ #
@@ -153,6 +154,7 @@ class Command(BaseCommand):
             (TEL_ADMIN,    'Administrateur',     'Admin',      'Système',  'Rawbank',   ''),
             (TEL_AGENT1,   'Agent de crédit',    'Agent',      'Crédit',   'Kabongo',   'gombe'),
             (TEL_AGENT2,   'Agent de crédit',    'Grace',      'Limete',   'Mputu',     'limete'),
+            (TEL_AGENT3,   'Agent de crédit',    'Jonas',      'Bandal',   'Mukasa',    'bandal'),
             (TEL_MANAGER,  'Responsable crédit', 'Responsable','Crédit',   'Mukendi',   ''),
             (TEL_ANALYSTE, 'Analyste risque',    'Analyste',   'Risque',   'Tshilombo', ''),
             (TEL_AUDITEUR, 'Auditeur',           'Auditeur',   'Conformité','Ilunga',   ''),
@@ -638,15 +640,24 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write('Staff :')
         staff_info = [
-            ('Administrateur',     TEL_ADMIN),
+            ('Administrateur',        TEL_ADMIN),
             ('Agent crédit (Gombe)',  TEL_AGENT1),
             ('Agent crédit (Limete)', TEL_AGENT2),
-            ('Responsable crédit', TEL_MANAGER),
-            ('Analyste risque',    TEL_ANALYSTE),
-            ('Auditeur',           TEL_AUDITEUR),
+            ('Agent crédit (Bandal)', TEL_AGENT3),
+            ('Responsable crédit',    TEL_MANAGER),
+            ('Analyste risque',       TEL_ANALYSTE),
+            ('Auditeur',              TEL_AUDITEUR),
         ]
         for role, tel in staff_info:
-            self.stdout.write(f'  {role:30s} {tel}')
+            user = users.get(tel)
+            uid = f'id={user.pk}' if user else '?'
+            self.stdout.write(f'  {role:30s} {tel}  [{uid}]')
+        self.stdout.write('')
+        self.stdout.write('Agents de crédit et leurs IDs :')
+        for tel in [TEL_AGENT1, TEL_AGENT2, TEL_AGENT3]:
+            user = users.get(tel)
+            if user:
+                self.stdout.write(self.style.SUCCESS(f'  id={user.pk:3d}  {user.prenom} {user.nom}  {tel}  (commune: {user.commune_kinshasa or "—"})'))
         self.stdout.write('')
         self.stdout.write(f'Clients : {len(CLIENT_SPECS)} comptes demo')
         self.stdout.write('  Niveaux : Standard / Pro / Pro+ / Premium')

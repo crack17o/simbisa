@@ -63,6 +63,11 @@ class DecisionCredit(TimestampedModel):
         ('rejete', 'Rejeté'),
         ('mise_en_attente', 'Mise en attente'),
     ]
+    RECOMMANDATIONS = [
+        ('approuver', 'Approuver'),
+        ('prudence', 'Prudence'),
+        ('rejeter', 'Rejeter'),
+    ]
 
     id_demande = models.OneToOneField(DemandeCredit, on_delete=models.CASCADE, related_name='decision')
     id_agent = models.ForeignKey(
@@ -70,6 +75,7 @@ class DecisionCredit(TimestampedModel):
         on_delete=models.SET_NULL, related_name='decisions_prises'
     )
     decision = models.CharField(max_length=20, choices=DECISIONS)
+    recommandation_ia = models.CharField(max_length=20, choices=RECOMMANDATIONS, blank=True, default='prudence')
     score_global = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0'))
     motif = models.TextField(blank=True)
     explication_ia = models.TextField(blank=True)

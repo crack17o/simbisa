@@ -1,6 +1,7 @@
 class ClientScoreData {
   ClientScoreData({
     required this.scoreClient,
+    required this.scoreProfil,
     required this.niveauRisque,
     required this.detailDerniereDemande,
     required this.motors,
@@ -11,6 +12,8 @@ class ClientScoreData {
   });
 
   final double scoreClient;
+  // Score calculé depuis le profil MM+comportemental (sans historique crédit) — "Mon Score"
+  final double scoreProfil;
   final String? niveauRisque;
   final ScoreDemandeDetail? detailDerniereDemande;
   final List<ScoreMotorData> motors;
@@ -63,6 +66,7 @@ class ClientScoreData {
 
     return ClientScoreData(
       scoreClient: (json['score_client'] as num?)?.toDouble() ?? 0,
+      scoreProfil: (json['score_profil'] as num?)?.toDouble() ?? (json['score_client'] as num?)?.toDouble() ?? 0,
       niveauRisque: detail?.niveauRisque ?? ia?['niveau_risque'] as String?,
       detailDerniereDemande: detail,
       motors: motors,

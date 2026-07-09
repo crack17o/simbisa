@@ -111,11 +111,13 @@ def submit_credit_request(request):
     with transaction.atomic():
         demande = serializer.save(id_client=request.user.client_profile)
 
-    # Mode async (Celery) si disponible, sinon exécution synchrone.
+    # Scoring synchrone — le score est calculé avant que la réponse soit retournée
+    # afin que l'agent voie immédiatement le résultat dans la liste des demandes.
     try:
-        process_credit_scoring.delay(demande.pk)
-    except Exception:
-        process_credit_scoring(demande.pk)
+        from apps.scoring.services import ScoringOrchestrator
+        ScoringOrchestrator(demande).run()
+    except Exception as e:
+        logger.warning(f"Scoring synchrone échoué pour demande #{demande.pk}: {e}")
 
     logger.info(
         f"Demande crédit #{demande.pk} ({demande.devise}) soumise "
@@ -124,7 +126,7 @@ def submit_credit_request(request):
 
     return Response({
         'success': True,
-        'message': 'Demande soumise. Analyse en cours…',
+        'message': 'Demande soumise avec analyse de risque.',
         'data': {
             'demande_id': demande.pk,
             'devise': demande.devise,

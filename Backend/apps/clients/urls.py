@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('communes/', views.communes_list_view, name='client-communes'),
+    path('stats/', views.client_stats_view, name='client-stats'),
     path('create/', views.agent_create_client_view, name='client-agent-create'),
     path('', views.ClientListView.as_view(), name='client-list'),
     path('me/', views.MyProfileView.as_view(), name='client-me'),

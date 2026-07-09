@@ -36,6 +36,7 @@ class ScoringOrchestrator:
                 return self._finalize_decision(
                     score_global=0.0,
                     decision='rejete',
+                    recommandation_ia='rejeter',
                     motif=rules_result['motif'],
                     explication_ia='',
                     scores_detail={},
@@ -103,30 +104,25 @@ class ScoringOrchestrator:
             result = self._finalize_decision(
                 score_global=aggregation['score_global'],
                 decision=aggregation['decision'],
+                recommandation_ia=aggregation.get('recommandation_ia', 'prudence'),
                 motif=aggregation['motif_decision'],
                 explication_ia=explication,
                 scores_detail=aggregation['scores_detail'],
                 score_ia_obj=score_ia_obj,
             )
 
-            statut_map = {
-                'approuve': 'approuve',
-                'rejete': 'rejete',
-                'mise_en_attente': 'en_analyse',
-            }
-            self.demande.statut = statut_map.get(aggregation['decision'], 'en_analyse')
+            # La décision IA est toujours mise_en_attente — jamais d'approbation automatique
+            self.demande.statut = 'en_analyse'
             self.demande.save(update_fields=['statut'])
-
-            if aggregation['decision'] == 'approuve':
-                self._create_credit(aggregation['score_global'])
 
             return result
 
-    def _finalize_decision(self, score_global, decision, motif, explication_ia, scores_detail, score_ia_obj) -> dict:
+    def _finalize_decision(self, score_global, decision, recommandation_ia, motif, explication_ia, scores_detail, score_ia_obj) -> dict:
         DecisionCredit.objects.update_or_create(
             id_demande=self.demande,
             defaults={
                 'decision': decision,
+                'recommandation_ia': recommandation_ia,
                 'score_global': Decimal(str(score_global)),
                 'motif': motif,
                 'explication_ia': explication_ia,
@@ -152,6 +148,7 @@ class ScoringOrchestrator:
             'demande_id': self.demande.pk,
             'score_global': score_global,
             'decision': decision,
+            'recommandation_ia': recommandation_ia,
             'motif': motif,
             'explication_ia': explication_ia,
             'scores_detail': scores_detail,

@@ -1,10 +1,11 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from drf_spectacular.utils import extend_schema
 
-from apps.core.permissions import IsAgent, IsAgentOrManager
+from apps.core.permissions import IsAgent, IsAgentOrManager, IsAnalysteRisque
 from .models import VectorDocument
 from .serializers import VectorDocumentSerializer
 from .services.generator import RAGGenerator
@@ -14,12 +15,98 @@ from .services.embeddings.factory import embedding_is_available
 
 class VectorDocumentListView(generics.ListAPIView):
     serializer_class = VectorDocumentSerializer
-    permission_classes = [IsAgent]
-    queryset = VectorDocument.objects.all()
+    permission_classes = [IsAgent | IsAnalysteRisque]
+    queryset = VectorDocument.objects.all().order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
         return Response({'success': True, 'data': response.data})
+
+
+def _extract_pdf_text(file_obj) -> str:
+    """Extrait le texte d'un fichier PDF. Retourne '' si pypdf absent."""
+    try:
+        import pypdf
+        reader = pypdf.PdfReader(file_obj)
+        pages = [page.extract_text() or '' for page in reader.pages]
+        return '\n\n'.join(p for p in pages if p.strip())
+    except ImportError:
+        pass
+    try:
+        import PyPDF2
+        reader = PyPDF2.PdfReader(file_obj)
+        pages = [reader.pages[i].extract_text() or '' for i in range(len(reader.pages))]
+        return '\n\n'.join(p for p in pages if p.strip())
+    except ImportError:
+        pass
+    return ''
+
+
+@extend_schema(tags=['RAG'])
+@api_view(['POST'])
+@permission_classes([IsAnalysteRisque])
+def upload_document_view(request):
+    """
+    Upload d'un document de politique (texte ou PDF).
+    Champs : title (str), document_type (str, défaut 'policy'),
+             source (str, optionnel), content (str) OU file (PDF).
+    """
+    title = request.data.get('title', '').strip()
+    if not title:
+        return Response({'success': False, 'error': {'message': 'Titre requis.'}},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    content = request.data.get('content', '').strip()
+    uploaded_file = request.FILES.get('file')
+
+    if uploaded_file:
+        name_lower = uploaded_file.name.lower()
+        if name_lower.endswith('.pdf'):
+            content = _extract_pdf_text(uploaded_file)
+            if not content:
+                content = uploaded_file.read().decode('utf-8', errors='replace')
+        else:
+            content = uploaded_file.read().decode('utf-8', errors='replace')
+
+    if not content:
+        return Response({'success': False, 'error': {'message': 'Contenu vide. Fournissez du texte ou un fichier PDF valide.'}},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    doc = VectorDocument.objects.create(
+        title=title,
+        content=content,
+        source=request.data.get('source', '').strip(),
+        document_type=request.data.get('document_type', 'policy'),
+    )
+
+    # Embedding asynchrone — ne bloque pas la réponse
+    try:
+        from .services.embedder import DocumentEmbedder
+        emb = DocumentEmbedder()
+        if emb.is_available():
+            emb.embed_document(doc, save=True)
+    except Exception:
+        pass
+
+    return Response({
+        'success': True,
+        'message': 'Document indexé avec succès.',
+        'data': VectorDocumentSerializer(doc).data,
+    }, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=['RAG'])
+@api_view(['DELETE'])
+@permission_classes([IsAnalysteRisque])
+def delete_document_view(request, pk):
+    try:
+        doc = VectorDocument.objects.get(pk=pk)
+    except VectorDocument.DoesNotExist:
+        return Response({'success': False, 'error': {'message': 'Document introuvable.'}},
+                        status=status.HTTP_404_NOT_FOUND)
+    title = doc.title
+    doc.delete()
+    return Response({'success': True, 'message': f'Document « {title} » supprimé.'})
 
 
 @extend_schema(tags=['RAG'])
