@@ -16,6 +16,8 @@ class AuthService {
     var phone = raw.replaceAll(' ', '').replaceAll('-', '');
     if (phone.startsWith('243') && !phone.startsWith('+')) {
       phone = '+$phone';
+    } else if (!phone.startsWith('+')) {
+      phone = '+243$phone';
     }
     if (!phone.startsWith('+243')) {
       throw ApiException('Numéro DRC requis (format +243XXXXXXXXX).');
