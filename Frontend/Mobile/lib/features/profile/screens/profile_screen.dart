@@ -82,12 +82,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _newPwdCtrl = TextEditingController();
   final _newPwd2Ctrl = TextEditingController();
   bool _changingPwd = false;
+  bool _showOldPwd = false;
+  bool _showNewPwd = false;
+  bool _showNewPwd2 = false;
 
   @override
   void initState() {
     super.initState();
     _mfaEnabled = Session.current?.mfaEnabled ?? false;
+    _newPwdCtrl.addListener(() => setState(() {}));
     _load();
+  }
+
+  void _handleMfaToggle() {
+    if (_mfaEnabled) {
+      setState(() => _mfaDisableOpen = !_mfaDisableOpen);
+      if (!_mfaDisableOpen) _mfaDisablePwdCtrl.clear();
+    } else if (_mfaSentTo.isNotEmpty) {
+      setState(() { _mfaSentTo = ''; _mfaCodeCtrl.clear(); });
+    } else {
+      _sendMfaCode();
+    }
   }
 
   @override
@@ -104,6 +119,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _newPwd2Ctrl.dispose();
     super.dispose();
   }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  Color _adaptive(Color dark, Color light) =>
+      Theme.of(context).brightness == Brightness.dark ? dark : light;
 
   Future<void> _load() async {
     setState(() {
@@ -430,7 +449,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          Text(profile.fullName, style: const TextStyle(fontFamily: 'Sora', fontSize: 20, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          Text(profile.fullName, style: const TextStyle(fontFamily: 'Sora', fontSize: 20, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text('Client Simbisa · ID #C-${profile.id.toString().padLeft(5, '0')}', style: SimbisaText.body(12, color: SimbisaColors.muted)),
           const SizedBox(height: 16),
@@ -453,7 +472,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Statut KYC', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Statut KYC', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           for (final item in items)
             Padding(
@@ -518,7 +537,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Text('Agent de crédit', style: SimbisaText.label(color: SimbisaColors.muted)),
                       const SizedBox(height: 2),
                       Text(profile.agentAssigne!.fullName,
-                          style: SimbisaText.body(13, weight: FontWeight.w600, color: SimbisaColors.blanc)),
+                          style: SimbisaText.body(13, weight: FontWeight.w600)),
                       Text(profile.agentAssigne!.telephone,
                           style: SimbisaText.body(11, color: SimbisaColors.muted)),
                     ],
@@ -526,7 +545,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ],
             ),
-            const Divider(color: Colors.white12, height: 24),
+            Divider(color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.12), height: 24),
           ],
 
           // Titre section
@@ -543,7 +562,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(width: 12),
               Text(
                 showForm && _showReplaceForm ? 'Remplacer le document KYC' : 'Document KYC',
-                style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc),
+                style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ],
           ),
@@ -572,7 +591,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             existingId.typePiece.replaceAll('_', ' '),
                             if (existingId.numeroPiece != null) '· ${existingId.numeroPiece}',
                           ].join(' '),
-                          style: SimbisaText.body(13, weight: FontWeight.w600, color: SimbisaColors.blanc),
+                          style: SimbisaText.body(13, weight: FontWeight.w600),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -638,15 +657,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: SimbisaColors.panel,
+                color: _adaptive(SimbisaColors.panel, SimbisaLightColors.panel),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                border: Border.all(color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   isExpanded: true,
                   value: _kycType,
-                  dropdownColor: SimbisaColors.panel,
+                  dropdownColor: _adaptive(SimbisaColors.panel, SimbisaLightColors.panel),
                   items: _kycTypes
                       .map((t) => DropdownMenuItem(value: t, child: Text(t, style: SimbisaText.body(13))))
                       .toList(),
@@ -690,7 +709,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Text(
                             _kycFile != null ? _kycFile!.name : 'Joindre un document',
                             style: SimbisaText.body(13,
-                                color: _kycFile != null ? SimbisaColors.success : SimbisaColors.blanc),
+                                color: _kycFile != null ? SimbisaColors.success : null),
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text('PNG, JPG ou PDF — recommandé',
@@ -748,7 +767,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Modifier le profil', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Modifier le profil', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
           NeuTextField(label: 'Profession', hint: 'Ex : Commerçant', prefixIcon: const Icon(Icons.work_outline), controller: _professionCtrl),
           const SizedBox(height: 12),
@@ -774,7 +793,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Informations personnelles', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Informations personnelles', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
           for (final item in [
             (Icons.person_outline, 'Nom complet', profile.fullName),
@@ -824,7 +843,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: const Icon(Icons.mobile_friendly_rounded, color: SimbisaColors.teal, size: 18),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(serviceTitle, style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc))),
+              Expanded(child: Text(serviceTitle, style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700))),
             ],
           ),
           const SizedBox(height: 8),
@@ -852,83 +871,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildMfaCard() {
+    final setupOpen = !_mfaEnabled && _mfaSentTo.isNotEmpty;
     return NeuCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Sécurité MFA', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (_mfaEnabled ? SimbisaColors.success : SimbisaColors.muted).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Sécurité MFA', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(
+                      _mfaEnabled
+                          ? 'OTP requis à chaque connexion.'
+                          : 'Activez pour sécuriser votre compte.',
+                      style: SimbisaText.body(12, color: SimbisaColors.muted),
+                    ),
+                  ],
                 ),
-                child: Text(_mfaEnabled ? 'Activé' : 'Inactif', style: SimbisaText.body(11, color: _mfaEnabled ? SimbisaColors.success : SimbisaColors.muted, weight: FontWeight.w600)),
+              ),
+              GestureDetector(
+                onTap: _mfaLoading ? null : _handleMfaToggle,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: 44, height: 24,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: _mfaEnabled
+                        ? SimbisaColors.success
+                        : SimbisaColors.muted.withValues(alpha: 0.3),
+                  ),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 250),
+                    alignment: _mfaEnabled ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.all(3),
+                      width: 18, height: 18,
+                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text('Chaque connexion enverra un code OTP à votre e-mail.', style: SimbisaText.body(12, color: SimbisaColors.muted)),
-          const SizedBox(height: 14),
-          if (_mfaEnabled) ...[
-            Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: SimbisaColors.success, size: 16),
-                const SizedBox(width: 8),
-                Text('MFA activé — OTP requis à chaque connexion.', style: SimbisaText.body(13, color: SimbisaColors.success)),
-              ],
-            ),
+
+          // ── Panneau activation (OTP envoyé) ──
+          if (setupOpen) ...[
             const SizedBox(height: 14),
-            if (!_mfaDisableOpen)
-              NeuButton(
-                width: double.infinity,
-                gold: false,
-                secondary: true,
-                onTap: () => setState(() => _mfaDisableOpen = true),
-                child: const Text('Désactiver le MFA'),
-              )
-            else ...[
-              NeuTextField(
-                label: 'Mot de passe',
-                hint: '••••••••',
-                prefixIcon: const Icon(Icons.lock_outline),
-                controller: _mfaDisablePwdCtrl,
-                obscureText: true,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: NeuButton(
-                      gold: false,
-                      secondary: true,
-                      onTap: () {
-                        setState(() => _mfaDisableOpen = false);
-                        _mfaDisablePwdCtrl.clear();
-                      },
-                      child: const Text('Annuler'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: NeuButton(
-                      loading: _mfaLoading,
-                      onTap: _disableMfa,
-                      child: const Text('Confirmer'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ] else ...[
-            if (_mfaSentTo.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text('Code envoyé à $_mfaSentTo', style: SimbisaText.body(12, color: SimbisaColors.muted)),
-              ),
+            Text('Code envoyé à $_mfaSentTo', style: SimbisaText.body(12, color: SimbisaColors.muted)),
+            const SizedBox(height: 10),
             NeuTextField(
               label: 'Code reçu par e-mail',
               hint: '000000',
@@ -939,9 +933,49 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: NeuButton(gold: false, secondary: true, loading: _mfaLoading, onTap: _sendMfaCode, child: const Text('Envoyer le code'))),
+                Expanded(
+                  child: NeuButton(
+                    gold: false,
+                    secondary: true,
+                    onTap: () => setState(() { _mfaSentTo = ''; _mfaCodeCtrl.clear(); }),
+                    child: const Text('Annuler'),
+                  ),
+                ),
                 const SizedBox(width: 10),
-                Expanded(child: NeuButton(loading: _mfaLoading, onTap: _verifyMfa, child: const Text('Activer MFA'))),
+                Expanded(
+                  child: NeuButton(loading: _mfaLoading, onTap: _verifyMfa, child: const Text('Confirmer')),
+                ),
+              ],
+            ),
+          ],
+
+          // ── Panneau désactivation ──
+          if (_mfaEnabled && _mfaDisableOpen) ...[
+            const SizedBox(height: 14),
+            Text('Confirmez votre mot de passe pour désactiver le MFA.', style: SimbisaText.body(12, color: SimbisaColors.muted)),
+            const SizedBox(height: 10),
+            NeuTextField(
+              label: 'Mot de passe',
+              hint: '••••••••',
+              prefixIcon: const Icon(Icons.lock_outline),
+              controller: _mfaDisablePwdCtrl,
+              obscureText: true,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: NeuButton(
+                    gold: false,
+                    secondary: true,
+                    onTap: () { setState(() => _mfaDisableOpen = false); _mfaDisablePwdCtrl.clear(); },
+                    child: const Text('Annuler'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: NeuButton(loading: _mfaLoading, onTap: _disableMfa, child: const Text('Confirmer')),
+                ),
               ],
             ),
           ],
@@ -951,19 +985,46 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildChangePasswordCard() {
+    Widget eyeBtn(bool show, VoidCallback toggle) => IconButton(
+      icon: Icon(show ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: SimbisaColors.muted, size: 18),
+      onPressed: toggle,
+    );
+
     return NeuCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Changer le mot de passe', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Changer le mot de passe', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
-          NeuTextField(label: 'Mot de passe actuel', hint: '••••••••', prefixIcon: const Icon(Icons.lock_outline), controller: _oldPwdCtrl, obscureText: true),
+          NeuTextField(
+            label: 'Mot de passe actuel',
+            hint: '••••••••',
+            prefixIcon: const Icon(Icons.lock_outline),
+            controller: _oldPwdCtrl,
+            obscureText: !_showOldPwd,
+            suffixIcon: eyeBtn(_showOldPwd, () => setState(() => _showOldPwd = !_showOldPwd)),
+          ),
           const SizedBox(height: 12),
-          NeuTextField(label: 'Nouveau mot de passe', hint: '••••••••', prefixIcon: const Icon(Icons.lock_outline), controller: _newPwdCtrl, obscureText: true),
+          NeuTextField(
+            label: 'Nouveau mot de passe',
+            hint: '••••••••',
+            prefixIcon: const Icon(Icons.lock_outline),
+            controller: _newPwdCtrl,
+            obscureText: !_showNewPwd,
+            suffixIcon: eyeBtn(_showNewPwd, () => setState(() => _showNewPwd = !_showNewPwd)),
+          ),
+          _PwdStrength(password: _newPwdCtrl.text),
           const SizedBox(height: 12),
-          NeuTextField(label: 'Confirmer', hint: '••••••••', prefixIcon: const Icon(Icons.lock_outline), controller: _newPwd2Ctrl, obscureText: true),
+          NeuTextField(
+            label: 'Confirmer le nouveau mot de passe',
+            hint: '••••••••',
+            prefixIcon: const Icon(Icons.lock_outline),
+            controller: _newPwd2Ctrl,
+            obscureText: !_showNewPwd2,
+            suffixIcon: eyeBtn(_showNewPwd2, () => setState(() => _showNewPwd2 = !_showNewPwd2)),
+          ),
           const SizedBox(height: 16),
-          NeuButton(width: double.infinity, loading: _changingPwd, onTap: _changePassword, child: const Text('Mettre à jour le mot de passe')),
+          NeuButton(width: double.infinity, loading: _changingPwd, onTap: _changePassword, child: const Text('Mettre à jour')),
         ],
       ),
     );
@@ -985,16 +1046,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           Text(Tr.of(lang, 'profile.appearance'),
               style: const TextStyle(
-                  fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+                  fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
 
           // Toggle thème
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: SimbisaColors.surface,
+              color: _adaptive(SimbisaColors.surface, SimbisaLightColors.surface),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+              border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07)),
             ),
             child: Row(children: [
               Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
@@ -1003,7 +1064,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Expanded(
                 child: Text(
                   isDark ? Tr.of(lang, 'ui.theme.dark') : Tr.of(lang, 'ui.theme.light'),
-                  style: SimbisaText.body(13, color: SimbisaColors.blanc),
+                  style: SimbisaText.body(13),
                 ),
               ),
               GestureDetector(
@@ -1053,12 +1114,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     decoration: BoxDecoration(
                       color: selected
                           ? SimbisaColors.or.withValues(alpha: 0.12)
-                          : SimbisaColors.surface,
+                          : _adaptive(SimbisaColors.surface, SimbisaLightColors.surface),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: selected
                             ? SimbisaColors.or.withValues(alpha: 0.5)
-                            : Colors.white.withValues(alpha: 0.06),
+                            : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
                         width: selected ? 1.5 : 1,
                       ),
                     ),
@@ -1112,7 +1173,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Compte', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Compte', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           NeuButton(
             gold: false,
@@ -1139,19 +1200,20 @@ class _LegalRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: SimbisaColors.surface,
+          color: isDark ? SimbisaColors.surface : SimbisaLightColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07)),
         ),
         child: Row(children: [
           Icon(icon, size: 16, color: SimbisaColors.or),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: SimbisaText.body(13, color: SimbisaColors.blanc))),
+          Expanded(child: Text(label, style: SimbisaText.body(13))),
           const Icon(Icons.arrow_forward_ios, size: 13, color: SimbisaColors.muted),
         ]),
       ),
@@ -1208,6 +1270,72 @@ class _KycActionButton extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Password strength indicator ─────────────────────────────────────────────
+bool _pwdLen8(String p)     => p.length >= 8;
+bool _pwdUpper(String p)    => p.contains(RegExp(r'[A-Z]'));
+bool _pwdDigit(String p)    => p.contains(RegExp(r'[0-9]'));
+bool _pwdSpecial(String p)  => p.contains(RegExp(r'[^A-Za-z0-9]'));
+
+const _pwdChecks = [
+  ('8 car. min', _pwdLen8),
+  ('Majuscule',  _pwdUpper),
+  ('Chiffre',    _pwdDigit),
+  ('Spécial',    _pwdSpecial),
+];
+const _pwdColors  = [Color(0xFFEF4444), Color(0xFFF97316), Color(0xFFEAB308), Color(0xFF22C55E)];
+const _pwdLabels  = ['Faible', 'Passable', 'Bon', 'Fort'];
+
+class _PwdStrength extends StatelessWidget {
+  final String password;
+  const _PwdStrength({required this.password});
+
+  @override
+  Widget build(BuildContext context) {
+    if (password.isEmpty) return const SizedBox.shrink();
+    final results = _pwdChecks.map((c) => c.$2(password)).toList();
+    final score   = results.where((ok) => ok).length;
+    final color   = _pwdColors[score > 0 ? score - 1 : 0];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Row(
+          children: List.generate(4, (i) => Expanded(
+            child: Container(
+              margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
+              height: 4,
+              decoration: BoxDecoration(
+                color: i < score ? color : (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          )),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (score > 0)
+              Text(_pwdLabels[score - 1], style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600))
+            else
+              const SizedBox.shrink(),
+            Row(
+              children: List.generate(_pwdChecks.length, (i) => Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  '${results[i] ? '✓' : '·'} ${_pwdChecks[i].$1}',
+                  style: TextStyle(fontSize: 10, color: results[i] ? const Color(0xFF22C55E) : SimbisaColors.muted),
+                ),
+              )),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

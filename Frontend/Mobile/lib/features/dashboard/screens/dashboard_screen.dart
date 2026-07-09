@@ -112,7 +112,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: SimbisaColors.panel,
         title: Text(Tr.of(lang, 'dash.confirm_payment')),
         content: Text('${formatMoney(sym, montant, decimals: 2)} ?'),
         actions: [
@@ -144,14 +143,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     if (_loading) {
       return const Scaffold(
-        backgroundColor: SimbisaColors.surface,
         body: Center(child: CircularProgressIndicator(color: SimbisaColors.or)),
       );
     }
 
     if (_error != null) {
       return Scaffold(
-        backgroundColor: SimbisaColors.surface,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -169,7 +166,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       body: SafeArea(
         child: RefreshIndicator(
           color: SimbisaColors.or,
@@ -212,6 +208,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildHeader(String name, String lang) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
@@ -222,7 +219,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(
-                  color: SimbisaColors.panel,
+                  color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: NeuShadow.goldGlow(),
                 ),
@@ -239,7 +236,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: SimbisaColors.panel,
+                    color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: NeuShadow.sm(),
                   ),
@@ -266,9 +263,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ('en', '🇬🇧', 'English'),
       ('ln', '🇨🇩', 'Lingala'),
     ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? SimbisaColors.panel : SimbisaLightColors.panel;
+    final itemBg  = isDark ? SimbisaColors.surface : SimbisaLightColors.surface;
+    final textCol = isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: SimbisaColors.panel,
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -290,11 +292,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 16),
             Text(
               Tr.of(current, 'lang.label'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Sora',
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: SimbisaColors.blanc,
+                color: textCol,
               ),
             ),
             const SizedBox(height: 12),
@@ -312,12 +314,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? SimbisaColors.or.withValues(alpha: 0.1)
-                        : SimbisaColors.surface,
+                        : itemBg,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isSelected
                           ? SimbisaColors.or.withValues(alpha: 0.4)
-                          : Colors.white.withValues(alpha: 0.06),
+                          : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
                     ),
                   ),
                   child: Row(children: [
@@ -328,7 +330,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected ? SimbisaColors.or : SimbisaColors.blanc,
+                        color: isSelected ? SimbisaColors.or : textCol,
                       ),
                     ),
                     if (isSelected) ...[
@@ -347,7 +349,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildWelcomeBanner(String lang) {
     return NeuCard(
-      gradient: SimbisaColors.cardGradient,
       child: Row(
         children: [
           Expanded(
@@ -356,7 +357,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 Text(Tr.of(lang, 'dash.welcome'), style: SimbisaText.body(13, color: SimbisaColors.muted)),
                 const SizedBox(height: 4),
-                Text(_displayName, style: const TextStyle(fontFamily: 'Sora', fontSize: 22, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+                Text(_displayName, style: const TextStyle(fontFamily: 'Sora', fontSize: 22, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -531,7 +532,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   children: [
                     Text(
                       formatMoney(credit.symbole, credit.montantAffiche),
-                      style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc),
+                      style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     StatusBadge.fromStatus(statut),
@@ -620,7 +621,7 @@ class _StatCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.value, style: const TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w800, color: SimbisaColors.blanc)),
+              Text(item.value, style: const TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w800)),
               const SizedBox(height: 2),
               Text(item.sub, style: SimbisaText.body(10, color: SimbisaColors.muted), overflow: TextOverflow.ellipsis),
             ],
@@ -638,11 +639,12 @@ class _IconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 38, height: 38,
-        decoration: BoxDecoration(color: SimbisaColors.panel, borderRadius: BorderRadius.circular(12), boxShadow: NeuShadow.sm()),
+        decoration: BoxDecoration(color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel, borderRadius: BorderRadius.circular(12), boxShadow: NeuShadow.sm()),
         child: Icon(icon, color: SimbisaColors.muted, size: 18),
       ),
     );

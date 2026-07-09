@@ -6,6 +6,7 @@ class PrivacyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     const sections = [
       _LegalSection('1. Collecte des données',
           'Simbisa Rawbank collecte uniquement les données nécessaires à ses services : informations d\'identité (nom, prénom, pièce d\'identité), coordonnées (téléphone, email), données financières (revenus estimés, historique Mobile Money) et données de navigation.\n\nCes données sont collectées lors de votre inscription et de vos interactions avec l\'application.'),
@@ -24,12 +25,10 @@ class PrivacyScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
-        backgroundColor: SimbisaColors.panel,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: SimbisaColors.blanc),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Row(children: [
@@ -45,7 +44,7 @@ class PrivacyScreen extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           const Text('Confidentialité',
-              style: TextStyle(color: SimbisaColors.blanc, fontSize: 16, fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ]),
       ),
       body: ListView(
@@ -54,9 +53,9 @@ class PrivacyScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: SimbisaColors.panel,
+              color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
             ),
             child: const Text(
               'Simbisa Rawbank s\'engage à protéger vos données personnelles conformément aux lois en vigueur en RDC.',
@@ -91,13 +90,14 @@ class _LegalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: SimbisaColors.panel,
+        color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(section.title,

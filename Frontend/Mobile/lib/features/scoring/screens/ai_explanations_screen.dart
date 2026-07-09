@@ -43,10 +43,8 @@ class _AIExplanationsScreenState extends State<AIExplanationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Explications IA (XAI)'),
-        backgroundColor: SimbisaColors.panel,
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: _loading
@@ -85,7 +83,7 @@ class _AIExplanationsScreenState extends State<AIExplanationsScreen> {
                 child: const Icon(Icons.auto_graph_rounded, color: SimbisaColors.or, size: 18),
               ),
               const SizedBox(width: 12),
-              const Text('Analyse XGBoost + SHAP', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+              const Text('Analyse XGBoost + SHAP', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 16),
@@ -123,7 +121,7 @@ class _AIExplanationsScreenState extends State<AIExplanationsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Attributions SHAP', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Attributions SHAP', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text('Contribution de chaque variable au score final.', style: SimbisaText.body(11, color: SimbisaColors.muted)),
           const SizedBox(height: 16),
@@ -185,7 +183,7 @@ class _AIExplanationsScreenState extends State<AIExplanationsScreen> {
                 child: const Icon(Icons.psychology_rounded, color: SimbisaColors.teal, size: 18),
               ),
               const SizedBox(width: 12),
-              const Text('Explication IA', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+              const Text('Explication IA', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 14),

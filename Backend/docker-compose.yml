@@ -51,6 +51,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.celery
     command: celery -A config worker -l info -Q default,scoring,rag --concurrency 4
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
     env_file:
       - .env
     volumes:
@@ -64,6 +66,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.celery
     command: celery -A config beat -l info
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
     env_file:
       - .env
     depends_on:

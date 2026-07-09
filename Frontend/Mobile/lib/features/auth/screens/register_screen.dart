@@ -39,6 +39,7 @@ class _PasswordStrength extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (password.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final results = _pwdRules.map((r) => r.test(password)).toList();
     final score = results.where((ok) => ok).length;
     final color = _strengthColors[score > 0 ? score - 1 : 0];
@@ -53,7 +54,7 @@ class _PasswordStrength extends StatelessWidget {
               margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
               height: 5,
               decoration: BoxDecoration(
-                color: i < score ? color : Colors.white.withValues(alpha: 0.08),
+                color: i < score ? color : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -248,7 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       margin: EdgeInsets.only(right: i == 0 ? 4 : 0),
                       height: 4,
                       decoration: BoxDecoration(
-                        color: i < _step ? orColor : Colors.white.withValues(alpha: 0.08),
+                        color: i < _step ? orColor : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -365,7 +366,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       decoration: BoxDecoration(
         color: panelColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(

@@ -89,9 +89,9 @@ class _ErrorScreenState extends State<ErrorScreen> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     final loggedIn = Session.current != null;
     final cfg = _cfg;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       body: Stack(children: [
         // ── Blob décoratif animé ──
         Positioned(
@@ -172,11 +172,11 @@ class _ErrorScreenState extends State<ErrorScreen> with TickerProviderStateMixin
                     child: Text(
                       widget.title ?? cfg.defaultTitle,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Sora',
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: SimbisaColors.blanc,
+                        color: isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc,
                       ),
                     ),
                   ),

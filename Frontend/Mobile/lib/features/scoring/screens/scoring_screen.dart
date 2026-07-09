@@ -52,15 +52,13 @@ class _ScoringScreenState extends State<ScoringScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
-        backgroundColor: SimbisaColors.surface,
         body: Center(child: CircularProgressIndicator(color: SimbisaColors.or)),
       );
     }
 
     if (_error != null || _score == null) {
       return Scaffold(
-        backgroundColor: SimbisaColors.surface,
-        appBar: AppBar(title: const Text('Scoring & Explications IA'), backgroundColor: SimbisaColors.panel),
+        appBar: AppBar(title: const Text('Scoring & Explications IA')),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -75,10 +73,8 @@ class _ScoringScreenState extends State<ScoringScreen> {
     }
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Scoring & Explications IA'),
-        backgroundColor: SimbisaColors.panel,
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: RefreshIndicator(
@@ -109,7 +105,6 @@ class _ScoringScreenState extends State<ScoringScreen> {
     final scoreInt = score.scoreClient.round();
 
     return NeuCard(
-      gradient: SimbisaColors.cardGradient,
       child: Column(
         children: [
           Row(
@@ -118,7 +113,7 @@ class _ScoringScreenState extends State<ScoringScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Scoring Multi-Moteur', style: TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+                  const Text('Scoring Multi-Moteur', style: TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text(
                     score.analyseDate != null ? 'Analyse du ${formatDate(score.analyseDate)}' : 'Profil client',
@@ -144,9 +139,9 @@ class _ScoringScreenState extends State<ScoringScreen> {
                       : '—',
                   color: SimbisaColors.success,
                 ),
-                Container(width: 1, height: 32, color: Colors.white.withOpacity(0.07)),
+                Builder(builder: (ctx) => Container(width: 1, height: 32, color: (Theme.of(ctx).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.07))),
                 _ScoreInfo(label: 'Niveau risque', value: risk, color: SimbisaColors.success),
-                Container(width: 1, height: 32, color: Colors.white.withOpacity(0.07)),
+                Builder(builder: (ctx) => Container(width: 1, height: 32, color: (Theme.of(ctx).brightness == Brightness.dark ? Colors.white : Colors.black).withValues(alpha: 0.07))),
                 _ScoreInfo(label: 'Modèle', value: score.modeleUtilise ?? '—', color: SimbisaColors.muted),
               ],
             ),
@@ -161,7 +156,7 @@ class _ScoringScreenState extends State<ScoringScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Moteurs de scoring', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Moteurs de scoring', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
           ...motors.map((m) {
             final color = _motorColors[m.colorIndex % _motorColors.length];
@@ -218,7 +213,7 @@ class _ScoringScreenState extends State<ScoringScreen> {
             children: [
               Icon(Icons.insights_rounded, color: SimbisaColors.or, size: 18),
               SizedBox(width: 8),
-              Text('Attributions SHAP locales', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+              Text('Attributions SHAP locales', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 16),
@@ -261,11 +256,11 @@ class _ScoringScreenState extends State<ScoringScreen> {
             children: [
               Icon(Icons.auto_awesome_rounded, color: SimbisaColors.orLight, size: 18),
               SizedBox(width: 8),
-              Text('Explication IA (RAG)', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+              Text('Explication IA (RAG)', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 12),
-          Text(explication, style: SimbisaText.body(12, color: SimbisaColors.blanc.withOpacity(0.85)).copyWith(height: 1.6)),
+          Text(explication, style: SimbisaText.body(12).copyWith(height: 1.6)),
         ],
       ),
     );

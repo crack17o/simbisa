@@ -191,16 +191,55 @@ def remboursement_view(request, credit_pk):
     devise = credit.id_demande.devise
     sym = symbole(devise)
 
+    montant = s.validated_data['montant']
+    if montant > credit.solde_restant:
+        return Response(
+            {'success': False, 'error': {'message': f'Le montant dépasse le solde restant ({sym}{credit.solde_restant}).'}},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     with transaction.atomic():
         remb = Remboursement.objects.create(
             id_credit=credit,
-            montant=s.validated_data['montant'],
+            montant=montant,
             mode_paiement=s.validated_data['mode_paiement'],
         )
+
+        # Allouer le paiement aux échéances chronologiquement
+        echeances_a_payer = credit.echeances.filter(
+            statut__in=['non_paye', 'en_retard', 'partiellement_paye']
+        ).order_by('date_echeance')
+
+        restant = montant
+        premiere_echeance = None
+
+        for ech in echeances_a_payer:
+            if restant <= Decimal('0'):
+                break
+            manquant = ech.montant - ech.montant_paye
+            if manquant <= Decimal('0'):
+                continue
+            if premiere_echeance is None:
+                premiere_echeance = ech
+            a_crediter = min(manquant, restant)
+            ech.montant_paye += a_crediter
+            restant -= a_crediter
+            ech.statut = 'paye' if ech.montant_paye >= ech.montant else 'partiellement_paye'
+            ech.save(update_fields=['montant_paye', 'statut'])
+
+        if premiere_echeance:
+            remb.echeance = premiere_echeance
+            remb.save(update_fields=['echeance'])
 
         if credit.solde_restant <= Decimal('0.01'):
             credit.statut = 'rembourse'
             credit.save(update_fields=['statut'])
+
+    # Déclencher le recalcul du score en arrière-plan
+    try:
+        process_credit_scoring.delay(credit.id_demande_id)
+    except Exception:
+        logger.warning(f"Impossible de déclencher le recalcul du score pour la demande #{credit.id_demande_id}")
 
     return Response({
         'success': True,

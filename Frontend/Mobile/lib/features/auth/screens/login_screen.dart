@@ -113,6 +113,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Widget _buildLogo() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -120,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: SimbisaColors.panel,
+            color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
             borderRadius: BorderRadius.circular(14),
             boxShadow: NeuShadow.goldGlow(),
           ),
@@ -138,16 +139,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Widget _buildHero() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc;
     return Column(
       children: [
-        const Text(
-          "L'inclusion financière\ncommence ici.",
+        Text(
+          'Au-delà d\'un simple\naccès au crédit.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Sora', fontSize: 26, fontWeight: FontWeight.w800, color: SimbisaColors.blanc, height: 1.25),
+          style: TextStyle(fontFamily: 'Sora', fontSize: 26, fontWeight: FontWeight.w800, color: titleColor, height: 1.25),
         ),
         const SizedBox(height: 12),
         Text(
-          'Accédez au crédit grâce à votre historique Mobile Money.\nRapide, transparent, conçu pour la RDC.',
+          'Votre historique Mobile Money devient votre garantie.\nConçu pour Kinshasa, pensé pour tous.',
           textAlign: TextAlign.center,
           style: SimbisaText.body(13, color: SimbisaColors.muted),
         ),
@@ -160,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Connexion', style: TextStyle(fontFamily: 'Sora', fontSize: 22, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          Text('Connexion', style: const TextStyle(fontFamily: 'Sora', fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text('Numéro illicocash + mot de passe', style: SimbisaText.body(13, color: SimbisaColors.muted)),
           const SizedBox(height: 24),
@@ -215,23 +218,25 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Widget _buildDivider() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final divColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1);
     return Row(
       children: [
-        Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.08))),
+        Expanded(child: Container(height: 1, color: divColor)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text('ou', style: SimbisaText.body(12, color: SimbisaColors.muted)),
         ),
-        Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.08))),
+        Expanded(child: Container(height: 1, color: divColor)),
       ],
     );
   }
 
   Widget _buildStats() {
-    final stats = [
-      ('500k+', 'Clients actifs'),
-      ('<3s', 'Décision crédit'),
-      ('100%', 'Dématérialisé'),
+    const stats = [
+      ('Rapidité', 'Décision en moins de 3 secondes'),
+      ('Respect',  'Confidentialité et transparence'),
+      ('Rigueur',  'Scoring à 4 moteurs certifiés'),
     ];
     final List<Widget> children = [];
     for (var i = 0; i < stats.length; i++) {
@@ -244,16 +249,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               children: [
                 GradientText(
                   s.$1,
-                  style: const TextStyle(fontFamily: 'Sora', fontSize: 20, fontWeight: FontWeight.w800),
+                  style: const TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 4),
-                Text(s.$2, textAlign: TextAlign.center, style: SimbisaText.body(10, color: SimbisaColors.muted)),
+                const SizedBox(height: 6),
+                Text(s.$2, textAlign: TextAlign.center, style: SimbisaText.body(9, color: SimbisaColors.muted)),
               ],
             ),
           ),
         ),
       );
-      if (i != stats.length - 1) children.add(const SizedBox(width: 12));
+      if (i != stats.length - 1) children.add(const SizedBox(width: 10));
     }
     return Row(children: children);
   }

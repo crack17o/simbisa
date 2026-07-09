@@ -50,10 +50,8 @@ class _MyCreditsScreenState extends State<MyCreditsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Mes crédits'),
-        backgroundColor: SimbisaColors.panel,
         actions: [
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
         ],
@@ -167,7 +165,7 @@ class _CreditCard extends StatelessWidget {
                 children: [
                   Text(
                     formatMoney(item.symbole, item.montantAffiche),
-                    style: const TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w800, color: SimbisaColors.blanc),
+                    style: const TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
                   StatusBadge.fromStatus(statut),
@@ -246,6 +244,7 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(width: 1, height: 30, color: Colors.white.withOpacity(0.07), margin: const EdgeInsets.symmetric(horizontal: 12));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(width: 1, height: 30, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08), margin: const EdgeInsets.symmetric(horizontal: 12));
   }
 }

@@ -108,10 +108,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Mot de passe oublié'),
-        backgroundColor: SimbisaColors.panel,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -129,6 +127,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildStepIndicator() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final labels = ['E-mail', 'Code OTP', 'Nouveau MDP'];
     return Row(
       children: List.generate(labels.length, (i) {
@@ -142,7 +141,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     Container(
                       height: 4,
                       decoration: BoxDecoration(
-                        color: active ? SimbisaColors.or : Colors.white.withValues(alpha: 0.1),
+                        color: active ? SimbisaColors.or : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),

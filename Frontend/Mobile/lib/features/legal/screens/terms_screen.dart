@@ -6,6 +6,7 @@ class TermsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     const sections = [
       _LegalSection('1. Présentation du service',
           'Simbisa est une plateforme de micro-crédit numérique opérée par Rawbank S.A., banque commerciale agréée par la Banque Centrale du Congo. Elle permet d\'accéder à des micro-crédits, à l\'épargne virtuelle et à la gestion de portefeuille Mobile Money.'),
@@ -26,12 +27,10 @@ class TermsScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
-        backgroundColor: SimbisaColors.panel,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: SimbisaColors.blanc),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Row(children: [
@@ -47,7 +46,7 @@ class TermsScreen extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           const Text("Conditions d'utilisation",
-              style: TextStyle(color: SimbisaColors.blanc, fontSize: 16, fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ]),
       ),
       body: ListView(
@@ -56,9 +55,9 @@ class TermsScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: SimbisaColors.panel,
+              color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
             ),
             child: const Text(
               'En créant un compte Simbisa, vous acceptez sans réserve les présentes conditions. Veuillez les lire attentivement.',
@@ -94,13 +93,14 @@ class _LegalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: SimbisaColors.panel,
+        color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(section.title,

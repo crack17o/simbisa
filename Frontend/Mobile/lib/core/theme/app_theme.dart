@@ -92,7 +92,7 @@ class NeuShadow {
 
 // ─── Typography ─────────────────────────────────────────────────────────────
 class SimbisaText {
-  static TextStyle display(double size, {Color color = SimbisaColors.blanc, FontWeight weight = FontWeight.w700}) {
+  static TextStyle display(double size, {Color? color, FontWeight weight = FontWeight.w700}) {
     return TextStyle(
       fontFamily: 'Sora',
       fontSize: size,
@@ -102,11 +102,11 @@ class SimbisaText {
     );
   }
 
-  static TextStyle body(double size, {Color color = SimbisaColors.blanc, FontWeight weight = FontWeight.w400}) {
+  static TextStyle body(double size, {Color? color, FontWeight weight = FontWeight.w400}) {
     return GoogleFonts.inter(fontSize: size, fontWeight: weight, color: color);
   }
 
-  static TextStyle label({Color color = SimbisaColors.muted}) {
+  static TextStyle label({Color? color = SimbisaColors.muted}) {
     return GoogleFonts.inter(
       fontSize: 10,
       fontWeight: FontWeight.w500,

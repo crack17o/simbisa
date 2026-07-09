@@ -100,8 +100,8 @@ class _OperationResultScreenState extends State<OperationResultScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -142,11 +142,11 @@ class _OperationResultScreenState extends State<OperationResultScreen>
                     // Titre
                     Text(widget.title,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Sora',
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: SimbisaColors.blanc,
+                          color: isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc,
                         )),
                     const SizedBox(height: 10),
 
@@ -162,9 +162,9 @@ class _OperationResultScreenState extends State<OperationResultScreen>
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: SimbisaColors.panel,
+                          color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+                          border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07)),
                         ),
                         child: Column(
                           children: widget.details.entries.map((e) => Padding(
@@ -176,8 +176,8 @@ class _OperationResultScreenState extends State<OperationResultScreen>
                                     style: const TextStyle(color: SimbisaColors.muted, fontSize: 13)),
                                 Flexible(
                                   child: Text(e.value,
-                                      style: const TextStyle(
-                                          color: SimbisaColors.blanc,
+                                      style: TextStyle(
+                                          color: isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc,
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600),
                                       textAlign: TextAlign.end),
@@ -206,9 +206,9 @@ class _OperationResultScreenState extends State<OperationResultScreen>
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
-                          color: SimbisaColors.panel,
+                          color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1)),
                         ),
                         child: Text(widget.secondaryLabel!,
                             textAlign: TextAlign.center,

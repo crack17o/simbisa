@@ -156,16 +156,14 @@ class _HelpScreenState extends State<HelpScreen> {
     final slides = _slidesForRole(role);
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
-        backgroundColor: SimbisaColors.panel,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: SimbisaColors.blanc),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text("Centre d'aide",
-            style: TextStyle(color: SimbisaColors.blanc, fontSize: 16, fontWeight: FontWeight.w600)),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -260,6 +258,7 @@ class _SlideViewState extends State<_SlideView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
@@ -269,7 +268,7 @@ class _SlideViewState extends State<_SlideView> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [SimbisaColors.or.withValues(alpha: 0.12), SimbisaColors.panel],
+              colors: [SimbisaColors.or.withValues(alpha: 0.12), isDark ? SimbisaColors.panel : SimbisaLightColors.panel],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -280,8 +279,8 @@ class _SlideViewState extends State<_SlideView> {
             Text(widget.slide.emoji, style: const TextStyle(fontSize: 32)),
             const SizedBox(width: 14),
             Text(widget.slide.title,
-                style: const TextStyle(
-                    color: SimbisaColors.blanc, fontSize: 18, fontWeight: FontWeight.w700)),
+                style: TextStyle(
+                    color: isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc, fontSize: 18, fontWeight: FontWeight.w700)),
           ]),
         ),
         const SizedBox(height: 14),
@@ -298,12 +297,12 @@ class _SlideViewState extends State<_SlideView> {
               decoration: BoxDecoration(
                 color: open
                     ? SimbisaColors.or.withValues(alpha: 0.06)
-                    : SimbisaColors.panel,
+                    : (isDark ? SimbisaColors.panel : SimbisaLightColors.panel),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: open
                       ? SimbisaColors.or.withValues(alpha: 0.35)
-                      : Colors.white.withValues(alpha: 0.07),
+                      : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
                 ),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -311,7 +310,7 @@ class _SlideViewState extends State<_SlideView> {
                   Expanded(
                     child: Text(faq.q,
                         style: TextStyle(
-                            color: open ? SimbisaColors.or : SimbisaColors.blanc,
+                            color: open ? SimbisaColors.or : (isDark ? SimbisaColors.blanc : SimbisaLightColors.blanc),
                             fontSize: 13,
                             fontWeight: FontWeight.w600)),
                   ),

@@ -54,6 +54,40 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
     }
   }
 
+  void _showRemboursementSheet() {
+    final echeances = (_data?['echeances'] as List<dynamic>?) ?? [];
+    final solde = double.tryParse(_data?['solde_restant']?.toString() ?? '0') ?? 0;
+    if (solde <= 0) return;
+
+    double minMontant = solde;
+    for (final e in echeances) {
+      final statut = e['statut'] as String? ?? 'non_paye';
+      if (statut != 'paye') {
+        final restant = double.tryParse(e['restant']?.toString() ?? '0') ?? 0;
+        final montant = double.tryParse(e['montant']?.toString() ?? '0') ?? 0;
+        minMontant = restant > 0 ? restant : montant;
+        break;
+      }
+    }
+    minMontant = minMontant.clamp(0.01, solde);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _RemboursementSheet(
+        sym: widget.symbole,
+        creditId: widget.creditId,
+        minMontant: minMontant,
+        maxMontant: solde,
+        service: _service,
+        onSuccess: _load,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sym = widget.symbole;
@@ -61,16 +95,26 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
     final payees = echeances.where((e) => e['statut'] == 'paye').length;
     final total = echeances.length;
     final progression = total > 0 ? payees / total : 0.0;
+    final soldeRestant = double.tryParse(_data?['solde_restant']?.toString() ?? '0') ?? 0;
+    final creditStatut = _data?['statut'] as String? ?? 'en_cours';
+    final peutRembourser = !_loading && _error == null && soldeRestant > 0 && creditStatut == 'en_cours';
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Échéancier'),
-        backgroundColor: SimbisaColors.panel,
         actions: [
           IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load),
         ],
       ),
+      floatingActionButton: peutRembourser
+          ? FloatingActionButton.extended(
+              onPressed: _showRemboursementSheet,
+              backgroundColor: SimbisaColors.or,
+              foregroundColor: SimbisaColors.noir,
+              icon: const Icon(Icons.payments_rounded),
+              label: const Text('Rembourser', style: TextStyle(fontWeight: FontWeight.w700)),
+            )
+          : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: SimbisaColors.or))
           : _error != null
@@ -91,10 +135,9 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
                   color: SimbisaColors.or,
                   onRefresh: _load,
                   child: ListView(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
-                      // Résumé
                       NeuCard(
                         child: Column(
                           children: [
@@ -112,7 +155,7 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
                                 ),
                                 _Summary(
                                   label: 'Restant',
-                                  value: formatMoney(sym, double.tryParse(_data?['solde_restant']?.toString() ?? '') ?? 0),
+                                  value: formatMoney(sym, soldeRestant),
                                   color: SimbisaColors.muted,
                                 ),
                               ],
@@ -140,7 +183,7 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
                         NeuCard(
                           padding: const EdgeInsets.all(16),
                           child: Text(
-                            'Aucune échéance — le crédit vient d\'être accordé.',
+                            "Aucune échéance — le crédit vient d'être accordé.",
                             style: SimbisaText.body(13, color: SimbisaColors.muted),
                           ),
                         ),
@@ -177,14 +220,16 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
                           padding: const EdgeInsets.only(bottom: 10),
                           child: NeuCard(
                             padding: const EdgeInsets.all(14),
-                            shadows: statut == 'en_retard' ? NeuShadow.colorGlow(SimbisaColors.danger) : NeuShadow.sm(),
+                            shadows: statut == 'en_retard'
+                                ? NeuShadow.colorGlow(SimbisaColors.danger)
+                                : NeuShadow.sm(),
                             child: Row(
                               children: [
                                 Container(
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.12),
+                                    color: statusColor.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(statusIcon, color: statusColor, size: 16),
@@ -215,7 +260,7 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
                                         fontFamily: 'Sora',
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: statut == 'paye' ? SimbisaColors.success : SimbisaColors.blanc,
+                                        color: statut == 'paye' ? SimbisaColors.success : null,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -227,13 +272,197 @@ class _EcheancierScreenState extends State<EcheancierScreen> {
                           ),
                         );
                       }),
-                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
     );
   }
 }
+
+// ─── Feuille de remboursement ──────────────────────────────────────────────
+
+class _RemboursementSheet extends StatefulWidget {
+  final String sym;
+  final int creditId;
+  final double minMontant;
+  final double maxMontant;
+  final CreditService service;
+  final VoidCallback onSuccess;
+
+  const _RemboursementSheet({
+    required this.sym,
+    required this.creditId,
+    required this.minMontant,
+    required this.maxMontant,
+    required this.service,
+    required this.onSuccess,
+  });
+
+  @override
+  State<_RemboursementSheet> createState() => _RemboursementSheetState();
+}
+
+class _RemboursementSheetState extends State<_RemboursementSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _ctrl;
+  String _mode = 'illicocash';
+  bool _loading = false;
+
+  static const _modes = [
+    ('illicocash', 'Illico Cash'),
+    ('virement', 'Virement bancaire'),
+    ('agence', 'Agence Rawbank'),
+    ('mobile_money', 'Mobile Money'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.minMontant.toStringAsFixed(2));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final montant = double.tryParse(_ctrl.text.replaceAll(',', '.')) ?? 0;
+    setState(() => _loading = true);
+    try {
+      await widget.service.rembourser(
+        creditId: widget.creditId,
+        montant: montant,
+        modePaiement: _mode,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      widget.onSuccess();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: SimbisaColors.danger),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur réseau'), backgroundColor: SimbisaColors.danger),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sym = widget.sym;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Poignée
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              Text('Rembourser', style: SimbisaText.display(16)),
+              const SizedBox(height: 4),
+              Text(
+                'Min: ${formatMoney(sym, widget.minMontant)}   Max: ${formatMoney(sym, widget.maxMontant)}',
+                style: SimbisaText.body(12, color: SimbisaColors.muted),
+              ),
+              const SizedBox(height: 20),
+
+              // Montant
+              TextFormField(
+                controller: _ctrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: const TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w700, fontSize: 18),
+                decoration: InputDecoration(
+                  labelText: 'Montant ($sym)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                validator: (v) {
+                  final val = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  if (val == null || val <= 0) return 'Montant invalide';
+                  if (val < widget.minMontant - 0.005) {
+                    return 'Minimum: ${formatMoney(sym, widget.minMontant)}';
+                  }
+                  if (val > widget.maxMontant + 0.005) {
+                    return 'Maximum: ${formatMoney(sym, widget.maxMontant)}';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Mode de paiement
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12),
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _mode,
+                    isExpanded: true,
+                    dropdownColor: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
+                    items: _modes
+                        .map((m) => DropdownMenuItem(value: m.$1, child: Text(m.$2)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _mode = v ?? _mode),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                child: NeuButton(
+                  onTap: _loading ? null : _submit,
+                  child: _loading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: SimbisaColors.noir,
+                          ),
+                        )
+                      : const Text('Confirmer le remboursement', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Widgets utilitaires ───────────────────────────────────────────────────
 
 class _Summary extends StatelessWidget {
   final String label, value;
@@ -252,7 +481,7 @@ class _Summary extends StatelessWidget {
             fontFamily: 'Sora',
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: color ?? SimbisaColors.blanc,
+            color: color,
           ),
         ),
       ],

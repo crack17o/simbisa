@@ -114,10 +114,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   Future<void> _showObjectifSheet() async {
     if (_account == null) return;
     final lang = ref.read(langProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: SimbisaColors.panel,
+      backgroundColor: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -132,15 +133,13 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
     if (_loading) {
       return const Scaffold(
-        backgroundColor: SimbisaColors.surface,
         body: Center(child: CircularProgressIndicator(color: SimbisaColors.or)),
       );
     }
 
     if (_error != null || _account == null) {
       return Scaffold(
-        backgroundColor: SimbisaColors.surface,
-        appBar: AppBar(title: Text(Tr.of(lang, 'sav.page_title')), backgroundColor: SimbisaColors.panel),
+        appBar: AppBar(title: Text(Tr.of(lang, 'sav.page_title'))),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -159,10 +158,8 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     final sym = account.symbole;
 
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: Text(Tr.of(lang, 'sav.page_title')),
-        backgroundColor: SimbisaColors.panel,
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: RefreshIndicator(
@@ -313,7 +310,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(Tr.of(lang, 'sav.chart_title'), style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          Text(Tr.of(lang, 'sav.chart_title'), style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 20),
           SizedBox(
             height: 140,
@@ -367,7 +364,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(Tr.of(lang, 'sav.deposit_withdraw'), style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          Text(Tr.of(lang, 'sav.deposit_withdraw'), style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           NeuTextField(
             hint: Tr.of(lang, 'sav.amount_hint'),
@@ -394,7 +391,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 loading: _actionLoading,
                 onTap: _withdraw,
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.remove_rounded, size: 16, color: SimbisaColors.blanc),
+                  Icon(Icons.remove_rounded, size: 16, color: Theme.of(context).brightness == Brightness.dark ? SimbisaColors.blanc : SimbisaLightColors.blanc),
                   const SizedBox(width: 6),
                   Flexible(child: Text(Tr.of(lang, 'action.withdraw'), overflow: TextOverflow.ellipsis)),
                 ]),
@@ -417,14 +414,14 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(Tr.of(lang, 'sav.score_impact'), style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+                child: Text(Tr.of(lang, 'sav.score_impact'), style: const TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
               ),
               GestureDetector(
                 onTap: _showObjectifSheet,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: SimbisaColors.surface,
+                    color: Theme.of(context).brightness == Brightness.dark ? SimbisaColors.surface : SimbisaLightColors.surface,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: SimbisaColors.or.withOpacity(0.3)),
                   ),
@@ -556,7 +553,7 @@ class _ObjectifSheetState extends State<_ObjectifSheet> {
               Expanded(
                 child: Text(
                   Tr.of(widget.lang, 'sav.objectif_title'),
-                  style: const TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700, color: SimbisaColors.blanc),
+                  style: TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700, color: Theme.of(context).brightness == Brightness.dark ? SimbisaColors.blanc : SimbisaLightColors.blanc),
                 ),
               ),
               IconButton(
@@ -666,6 +663,7 @@ class _PeriodiciteChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -673,9 +671,9 @@ class _PeriodiciteChip extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 13),
           decoration: BoxDecoration(
-            color: selected ? SimbisaColors.or : SimbisaColors.surface,
+            color: selected ? SimbisaColors.or : (isDark ? SimbisaColors.surface : SimbisaLightColors.surface),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: selected ? SimbisaColors.or : SimbisaColors.panel),
+            border: Border.all(color: selected ? SimbisaColors.or : (isDark ? SimbisaColors.panel : SimbisaLightColors.panel)),
           ),
           child: Text(
             label,

@@ -83,10 +83,8 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Demande de crédit'),
-        backgroundColor: SimbisaColors.panel,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -106,11 +104,12 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
   }
 
   Widget _buildForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return NeuCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Nouvelle demande de micro-crédit', style: TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Nouvelle demande de micro-crédit', style: TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           RichText(text: TextSpan(
             style: SimbisaText.body(13, color: SimbisaColors.muted),
@@ -164,7 +163,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     activeTrackColor: SimbisaColors.or,
-                    inactiveTrackColor: const Color(0xFF232323),
+                    inactiveTrackColor: isDark ? const Color(0xFF232323) : Colors.black.withValues(alpha: 0.1),
                     thumbColor: SimbisaColors.orLight,
                     overlayColor: SimbisaColors.or.withOpacity(0.1),
                     trackHeight: 4,
@@ -187,7 +186,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             gradient: _duree == v ? SimbisaColors.goldGradient : null,
-                            color: _duree != v ? SimbisaColors.panel : null,
+                            color: _duree != v ? (isDark ? SimbisaColors.panel : SimbisaLightColors.panel) : null,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: _duree == v ? NeuShadow.goldGlow() : NeuShadow.sm(),
                           ),
@@ -270,7 +269,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Demande enregistrée', style: TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+            const Text('Demande enregistrée', style: TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(
               'L\'analyse prend plus de temps que prévu. Consultez « Mes crédits » dans quelques instants.',
@@ -315,7 +314,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+                    Text(title, style: const TextStyle(fontFamily: 'Sora', fontSize: 18, fontWeight: FontWeight.w700)),
                     Text('\$${amount.toStringAsFixed(0)} · $_duree mois', style: SimbisaText.body(12, color: SimbisaColors.muted)),
                   ],
                 ),
@@ -352,7 +351,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(d.explicationIa!, style: SimbisaText.body(12, color: SimbisaColors.blanc.withOpacity(0.8)).copyWith(height: 1.6)),
+                  Text(d.explicationIa!, style: SimbisaText.body(12).copyWith(height: 1.6)),
                 ],
               ),
             ),

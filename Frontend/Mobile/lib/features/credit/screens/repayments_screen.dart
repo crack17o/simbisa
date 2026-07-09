@@ -99,10 +99,8 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SimbisaColors.surface,
       appBar: AppBar(
         title: const Text('Remboursements'),
-        backgroundColor: SimbisaColors.panel,
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: _loading
@@ -141,7 +139,7 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Crédit à rembourser', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+          const Text('Crédit à rembourser', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           for (final c in _credits)
             Padding(
@@ -184,6 +182,7 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
   }
 
   Widget _buildPaymentForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final c = _selected!;
     return NeuCard(
       child: Column(
@@ -197,7 +196,7 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
                 child: const Icon(Icons.payments_rounded, color: SimbisaColors.or, size: 18),
               ),
               const SizedBox(width: 12),
-              const Text('Effectuer un remboursement', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700, color: SimbisaColors.blanc)),
+              const Text('Effectuer un remboursement', style: TextStyle(fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 16),
@@ -226,15 +225,15 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: SimbisaColors.panel,
+              color: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
                 value: _mode,
-                dropdownColor: SimbisaColors.panel,
+                dropdownColor: isDark ? SimbisaColors.panel : SimbisaLightColors.panel,
                 items: _modes.map((m) => DropdownMenuItem(value: m, child: Text(_modeLabels[m]!, style: SimbisaText.body(14)))).toList(),
                 onChanged: (v) => setState(() => _mode = v ?? _mode),
               ),
