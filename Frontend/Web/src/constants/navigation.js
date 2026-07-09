@@ -16,8 +16,7 @@ export const NAV_BY_ROLE = {
     { to: '/my-credits', icon: ShieldCheck, label: 'Mes crédits', key: 'nav.credits' },
     { to: '/repayments', icon: Wallet, label: 'Remboursements', key: 'nav.repayments' },
     { to: '/echeancier', icon: CalendarDays, label: 'Échéancier', key: 'nav.schedule' },
-    { to: '/scoring', icon: BarChart3, label: 'Mon score', key: 'nav.score' },
-    { to: '/ai-explanations', icon: Sparkles, label: 'Explications IA', key: 'nav.ai' },
+    { to: '/ai-explanations', icon: Sparkles, label: 'Mon score & IA', key: 'nav.ai' },
     { to: '/help', icon: HelpCircle, label: 'Aide', key: 'nav.help' },
   ],
   [ROLES.AGENT]: [

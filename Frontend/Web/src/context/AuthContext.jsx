@@ -139,7 +139,10 @@ export function AuthProvider({ children }) {
     return authUser
   }, [])
 
+  const loggingOutRef = useRef(false)
   const logout = useCallback(async () => {
+    if (loggingOutRef.current) return
+    loggingOutRef.current = true
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
     const stored = getStoredAuth()
     try {
@@ -147,6 +150,7 @@ export function AuthProvider({ children }) {
     } catch { /* ignore */ }
     setUser(null)
     setStoredAuth(null)
+    loggingOutRef.current = false
   }, [])
 
   const value = {

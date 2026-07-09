@@ -33,6 +33,7 @@ export function logoutApi(refreshToken) {
   return apiRequest('/api/v1/auth/logout/', {
     method: 'POST',
     body: { refresh: refreshToken },
+    retry: false,
   })
 }
 

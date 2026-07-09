@@ -17,9 +17,16 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
         model_id = model.removeprefix('models/')
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:embedContent"
 
+        api_key = settings.GEMINI_API_KEY
+        # Les clés AIzaSy utilisent x-goog-api-key ; les tokens OAuth2 (AQ. / ya29.) utilisent Bearer
+        if api_key.startswith('AIzaSy'):
+            auth_headers = {"x-goog-api-key": api_key}
+        else:
+            auth_headers = {"Authorization": f"Bearer {api_key}"}
+
         response = httpx.post(
             url,
-            headers={"x-goog-api-key": settings.GEMINI_API_KEY},
+            headers=auth_headers,
             json={
                 "model": model,
                 "content": {"parts": [{"text": text}]},

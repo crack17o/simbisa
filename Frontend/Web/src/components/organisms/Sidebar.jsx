@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Settings, LogOut, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import Logo from '@/components/atoms/Logo'
 import Avatar from '@/components/atoms/Avatar'
 import NavItem from '@/components/molecules/NavItem'
@@ -12,6 +12,7 @@ import { ROLES } from '@/constants/roles'
 
 export default function Sidebar({ user }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const { logout } = useAuth()
   const { t } = useLang()
   const navigate = useNavigate()
@@ -19,8 +20,10 @@ export default function Sidebar({ user }) {
   const navItems = getNavItems(user?.role)
   const showSettings = user?.role === ROLES.ADMIN
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    if (loggingOut) return
+    setLoggingOut(true)
+    await logout()
     navigate('/login')
   }
 
@@ -78,10 +81,13 @@ export default function Sidebar({ user }) {
             {!collapsed && (
               <button
                 onClick={handleLogout}
-                className="text-muted hover:text-danger transition-colors"
+                disabled={loggingOut}
+                className="text-muted hover:text-danger transition-colors disabled:opacity-50"
                 title={t('action.logout')}
               >
-                <LogOut size={14} />
+                {loggingOut
+                  ? <Loader2 size={14} className="animate-spin text-muted" />
+                  : <LogOut size={14} />}
               </button>
             )}
           </div>

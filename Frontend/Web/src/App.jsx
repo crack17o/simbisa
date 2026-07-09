@@ -79,9 +79,9 @@ function AppRoutes() {
       <Route path="/echeancier" element={<ProtectedRoute roles={[ROLES.CLIENT]}><Echeancier /></ProtectedRoute>} />
       <Route path="/wallets" element={<ProtectedRoute roles={[ROLES.CLIENT]}><Wallets /></ProtectedRoute>} />
 
-      {/* Scoring — Client, Agent, Manager, Analyste */}
+      {/* Scoring — Agent, Manager, Analyste uniquement (clients via /ai-explanations) */}
       <Route path="/scoring" element={
-        <ProtectedRoute roles={[ROLES.CLIENT, ROLES.AGENT, ROLES.MANAGER, ROLES.ANALYST]}>
+        <ProtectedRoute roles={[ROLES.AGENT, ROLES.MANAGER, ROLES.ANALYST]}>
           <ScoringDetail />
         </ProtectedRoute>
       } />

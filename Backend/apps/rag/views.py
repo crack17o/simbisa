@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 
-from apps.core.permissions import IsAgent
+from apps.core.permissions import IsAgent, IsAgentOrManager
 from .models import VectorDocument
 from .serializers import VectorDocumentSerializer
 from .services.generator import RAGGenerator
@@ -49,7 +49,7 @@ def generate_memo_view(request, demande_pk):
 
 @extend_schema(tags=['RAG'])
 @api_view(['GET'])
-@permission_classes([IsAgent])
+@permission_classes([IsAuthenticated])
 def rag_status_view(request):
     """Statut du pipeline RAG (provider LLM, embeddings, documents indexés)."""
     from django.conf import settings
