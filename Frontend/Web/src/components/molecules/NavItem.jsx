@@ -2,10 +2,11 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import clsx from 'clsx'
 
-export default function NavItem({ to, icon: Icon, label, collapsed = false, badge }) {
+export default function NavItem({ to, icon: Icon, label, collapsed = false, badge, end = false }) {
   return (
     <NavLink
       to={to}
+      end={end}
       className={({ isActive }) =>
         clsx(
           'flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200',

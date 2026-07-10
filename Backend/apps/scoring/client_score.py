@@ -13,7 +13,13 @@ logger = logging.getLogger('scoring')
 
 def _score_from_demande(demande: DemandeCredit) -> Optional[float]:
     if hasattr(demande, 'decision') and demande.decision:
-        return float(demande.decision.score_global)
+        d = demande.decision
+        s = float(d.score_global)
+        # score=0 + automatic = règles d'éligibilité non remplies (plafond, etc.)
+        # Ne pas pénaliser le score client pour un refus réglementaire automatique
+        if s == 0.0 and d.is_automatic:
+            return None
+        return s
     return None
 
 

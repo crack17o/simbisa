@@ -49,6 +49,7 @@ import Privacy from '@/pages/Privacy'
 import Terms from '@/pages/Terms'
 import Help from '@/pages/Help'
 import ErrorPage from '@/pages/ErrorPage'
+import DownloadAppFab from '@/components/atoms/DownloadAppFab'
 
 function RootRedirect() {
   const { isAuthenticated, user, loading } = useAuth()
@@ -155,6 +156,7 @@ export default function App() {
       <LangProvider>
       <AuthProvider>
         <AppRoutes />
+        <DownloadAppFab />
         <Toaster
           position="bottom-right"
           toastOptions={{

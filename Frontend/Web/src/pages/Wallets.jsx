@@ -43,16 +43,16 @@ function WalletCard({ wallet, onAction }) {
       {wallet.statut === 'actif' && (
         <div className="flex gap-2">
           <Button size="sm" icon={ArrowDownCircle} onClick={() => onAction(wallet, 'depot')}
-            className="flex-1" style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}>
-            Déposer
+            className="flex-1 min-w-0" style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}>
+            <span className="hidden sm:inline">Déposer</span>
           </Button>
           <Button size="sm" icon={ArrowUpCircle} onClick={() => onAction(wallet, 'retrait')}
-            variant="ghost" className="flex-1">
-            Retirer
+            variant="ghost" className="flex-1 min-w-0">
+            <span className="hidden sm:inline">Retirer</span>
           </Button>
           <Button size="sm" icon={History} onClick={() => onAction(wallet, 'historique')}
-            variant="ghost" className="flex-1">
-            Historique
+            variant="ghost" className="flex-1 min-w-0">
+            <span className="hidden sm:inline">Historique</span>
           </Button>
         </div>
       )}

@@ -17,7 +17,7 @@ export default function AIMemoPanel({ memo: memoProp, demandeId }) {
   const [ragOnline, setRagOnline] = useState(null)
 
   useEffect(() => {
-    if (memoProp) setMemo(memoProp)
+    setMemo(memoProp || null)
   }, [memoProp])
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function AIMemoPanel({ memo: memoProp, demandeId }) {
           <Sparkles size={18} style={{ color: '#D4AF37' }} />
           <h2 className="font-display font-bold text-blanc">Mémo IA</h2>
         </div>
-        {ragOnline !== null && (
+        {ragOnline !== null && isAgent && (
           <span className={`flex items-center gap-1 text-xs ${ragOnline ? 'text-success' : 'text-muted'}`}>
             {ragOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
             {ragOnline ? 'IA disponible' : 'IA hors-ligne'}
@@ -70,12 +70,20 @@ export default function AIMemoPanel({ memo: memoProp, demandeId }) {
 
       {!memo && !generating && (
         <div className="neu-inset rounded-xl p-6 flex flex-col items-center gap-4 text-center">
-          <p className="text-muted text-sm">
-            {memoProp ? 'Explication du scoring disponible ci-dessous.' : 'Générez une explication IA ou soumettez une demande de crédit.'}
-          </p>
-          <Button onClick={generate} icon={Sparkles} disabled={!ragOnline && isAgent}>
-            {isAgent && demandeId ? 'Générer le mémo' : 'Afficher explication'}
-          </Button>
+          {isAgent ? (
+            <>
+              <p className="text-muted text-sm">
+                {memoProp ? 'Explication du scoring disponible.' : 'Générez une explication IA pour cette demande.'}
+              </p>
+              <Button onClick={generate} icon={Sparkles} disabled={!ragOnline}>
+                {demandeId ? 'Générer le mémo' : 'Afficher explication'}
+              </Button>
+            </>
+          ) : (
+            <p className="text-muted text-sm">
+              Mémo IA non disponible pour cette demande. Un mémo est généré automatiquement après analyse complète de votre dossier.
+            </p>
+          )}
         </div>
       )}
 

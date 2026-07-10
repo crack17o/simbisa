@@ -176,16 +176,14 @@ export default function AuditReports() {
                     >
                       JSON
                     </Button>
-                    {stored && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        icon={Printer}
-                        onClick={() => exportHtml(stored)}
-                      >
-                        HTML
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon={Printer}
+                      onClick={() => exportHtml(stored || r)}
+                    >
+                      HTML
+                    </Button>
                   </div>
                 </div>
 

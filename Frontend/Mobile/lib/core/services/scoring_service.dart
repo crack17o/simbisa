@@ -7,8 +7,12 @@ class ScoringService {
   final ApiClient _api;
 
   Future<ClientScoreData> fetchMyScore() async {
-    final res = await _api.get('scoring/me/');
-    final data = res['data'] as Map<String, dynamic>;
+    final data = await fetchMyScoreRaw();
     return ClientScoreData.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> fetchMyScoreRaw() async {
+    final res = await _api.get('scoring/me/');
+    return res['data'] as Map<String, dynamic>;
   }
 }

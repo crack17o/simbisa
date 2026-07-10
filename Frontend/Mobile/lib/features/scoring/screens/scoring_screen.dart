@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simbisa/core/models/scoring_models.dart';
 import 'package:simbisa/core/services/api_client.dart';
 import 'package:simbisa/core/services/scoring_service.dart';
@@ -16,35 +19,56 @@ class ScoringScreen extends StatefulWidget {
 class _ScoringScreenState extends State<ScoringScreen> {
   final _service = ScoringService();
   bool _loading = true;
+  bool _refreshing = false;
   String? _error;
   ClientScoreData? _score;
 
   static const _motorColors = [SimbisaColors.or, SimbisaColors.blue, SimbisaColors.purple, SimbisaColors.teal];
+  static const _kCache = 'simbisa_cache_score_v1';
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadCached().then((_) => _load());
+  }
+
+  Future<void> _loadCached() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString(_kCache);
+      if (cached != null && mounted) {
+        final data = jsonDecode(cached) as Map<String, dynamic>;
+        setState(() {
+          _score = ClientScoreData.fromJson(data);
+          _loading = false;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_score == null) {
+      setState(() { _loading = true; _error = null; });
+    } else {
+      setState(() { _refreshing = true; _error = null; });
+    }
     try {
-      final score = await _service.fetchMyScore();
+      final rawData = await _service.fetchMyScoreRaw();
       if (!mounted) return;
       setState(() {
-        _score = score;
+        _score = ClientScoreData.fromJson(rawData);
         _loading = false;
+        _refreshing = false;
       });
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString(_kCache, jsonEncode(rawData));
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _loading = false;
-      });
+      if (_score == null) {
+        setState(() { _error = e.message; _loading = false; _refreshing = false; });
+      } else {
+        setState(() => _refreshing = false);
+      }
     }
   }
 
@@ -76,6 +100,16 @@ class _ScoringScreenState extends State<ScoringScreen> {
       appBar: AppBar(
         title: const Text('Scoring & Explications IA'),
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
+        bottom: _refreshing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(
+                  color: SimbisaColors.or,
+                  backgroundColor: Colors.transparent,
+                  minHeight: 2,
+                ),
+              )
+            : null,
       ),
       body: RefreshIndicator(
         color: SimbisaColors.or,
@@ -91,7 +125,7 @@ class _ScoringScreenState extends State<ScoringScreen> {
               if (_score!.motors.isNotEmpty) const SizedBox(height: 20),
               if (_score!.shapFeatures.isNotEmpty) _buildShap(_score!.shapFeatures),
               if (_score!.shapFeatures.isNotEmpty) const SizedBox(height: 20),
-              if (_score!.detailDerniereDemande?.explicationIa != null) _buildXaiConsistency(_score!),
+              if (_score!.detailDerniereDemande != null) _buildXaiConsistency(_score!),
               const SizedBox(height: 32),
             ],
           ),
@@ -260,7 +294,13 @@ class _ScoringScreenState extends State<ScoringScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(explication, style: SimbisaText.body(12).copyWith(height: 1.6)),
+          if (explication.isNotEmpty)
+            Text(explication, style: SimbisaText.body(12).copyWith(height: 1.6))
+          else
+            Text(
+              'Mémo IA non disponible pour cette demande. Un mémo est généré automatiquement après analyse complète de votre dossier.',
+              style: SimbisaText.body(12, color: SimbisaColors.muted).copyWith(height: 1.6),
+            ),
         ],
       ),
     );

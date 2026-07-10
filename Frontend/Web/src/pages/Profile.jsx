@@ -495,14 +495,14 @@ export default function Profile() {
             <div className="grid grid-cols-3 gap-3">
               {Object.entries(LANGS).map(([code, info]) => (
                 <button key={code} type="button" onClick={() => setLang(code)}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all"
+                  className="flex items-center gap-1.5 px-2 sm:px-3 py-3 rounded-xl border text-sm font-medium transition-all overflow-hidden"
                   style={lang === code
                     ? { background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.5)', color: '#D4AF37' }
                     : { background: 'var(--color-surface)', borderColor: 'rgba(255,255,255,0.06)', color: 'var(--color-muted)' }
                   }>
-                  <span className="text-base">{info.flag}</span>
-                  <span>{info.label}</span>
-                  {lang === code && <span className="ml-auto text-xs">✓</span>}
+                  <span className="text-base flex-shrink-0">{info.flag}</span>
+                  <span className="truncate">{info.label}</span>
+                  {lang === code && <span className="ml-auto flex-shrink-0 text-xs">✓</span>}
                 </button>
               ))}
             </div>

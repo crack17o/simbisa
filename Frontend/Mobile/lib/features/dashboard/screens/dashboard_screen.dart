@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simbisa/core/constants/routes.dart';
 import 'package:simbisa/core/i18n/translations.dart';
@@ -32,27 +35,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final _scoringService = ScoringService();
 
   bool _loading = true;
+  bool _refreshing = false;
   String? _error;
   String _displayName = '';
   bool _kycValid = false;
-  int _scoreProfil = 0;   // Mon Score — toujours calculé depuis le profil MM/comportemental
-  int _scoreGlobal = 0;   // Score global — moyenne USD/CDF incluant les décisions crédit
+  int _scoreProfil = 0;
+  int _scoreGlobal = 0;
   String _riskLevel = '—';
   SavingsAccount? _savings;
   List<CreditDemandeItem> _credits = [];
   CreditDemandeItem? _activeCredit;
 
+  static const _kName      = 'simbisa_dash_name';
+  static const _kProfil    = 'simbisa_dash_score_profil';
+  static const _kGlobal    = 'simbisa_dash_score_global';
+  static const _kRisk      = 'simbisa_dash_risk';
+  static const _kKyc       = 'simbisa_dash_kyc';
+
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadCached().then((_) => _load());
+  }
+
+  Future<void> _loadCached() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final name = prefs.getString(_kName);
+      if (name != null && name.isNotEmpty && mounted) {
+        setState(() {
+          _displayName = name;
+          _scoreProfil = prefs.getInt(_kProfil) ?? 0;
+          _scoreGlobal = prefs.getInt(_kGlobal) ?? 0;
+          _riskLevel   = prefs.getString(_kRisk) ?? '—';
+          _kycValid    = prefs.getBool(_kKyc) ?? false;
+          _loading     = false;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_displayName.isEmpty) {
+      setState(() { _loading = true; _error = null; });
+    } else {
+      setState(() { _refreshing = true; _error = null; });
+    }
     try {
       final scoreData = await _scoringService.fetchMyScore();
       final profile = await _clientService.fetchProfile(scoreClient: scoreData.scoreClient);
@@ -67,10 +95,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
       CreditDemandeItem? active;
       for (final c in credits) {
-        if (c.credit?.statut == 'en_cours') {
-          active = c;
-          break;
-        }
+        if (c.credit?.statut == 'en_cours') { active = c; break; }
       }
 
       if (!mounted) return;
@@ -78,27 +103,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _displayName = profile.fullName.isNotEmpty
             ? profile.fullName
             : (Session.current?.fullName ?? 'Client');
-        _kycValid = profile.kycValid;
+        _kycValid    = profile.kycValid;
         _scoreProfil = scoreData.scoreProfil.round();
         _scoreGlobal = scoreData.scoreClient.round();
-        _riskLevel = riskLabel(scoreData.niveauRisque ?? profile.niveauRisque);
-        _savings = savings;
-        _credits = credits;
+        _riskLevel   = riskLabel(scoreData.niveauRisque ?? profile.niveauRisque);
+        _savings     = savings;
+        _credits     = credits;
         _activeCredit = active;
-        _loading = false;
+        _loading     = false;
+        _refreshing  = false;
       });
+      // Persist key scalars for next cold start
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kName,   _displayName);
+      await prefs.setInt(_kProfil,    _scoreProfil);
+      await prefs.setInt(_kGlobal,    _scoreGlobal);
+      await prefs.setString(_kRisk,   _riskLevel);
+      await prefs.setBool(_kKyc,      _kycValid);
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _loading = false;
-      });
+      if (_displayName.isEmpty) {
+        setState(() { _error = e.message; _loading = false; _refreshing = false; });
+      } else {
+        setState(() => _refreshing = false);
+      }
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = 'Impossible de charger le tableau de bord.';
-        _loading = false;
-      });
+      if (_displayName.isEmpty) {
+        setState(() { _error = 'Impossible de charger le tableau de bord.'; _loading = false; _refreshing = false; });
+      } else {
+        setState(() => _refreshing = false);
+      }
     }
   }
 
@@ -168,43 +203,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: SimbisaColors.or,
-          onRefresh: _load,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(child: _buildHeader(_displayName, lang)),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildWelcomeBanner(lang),
-                    const SizedBox(height: 20),
-                    _buildStatsGrid(lang),
-                    const SizedBox(height: 20),
-                    if (_activeCredit != null) _buildNextRepayment(context, lang),
-                    if (_activeCredit != null) const SizedBox(height: 20),
-                    SectionHeader(
-                      title: Tr.of(lang, 'dash.credit_history'),
-                      action: Tr.of(lang, 'dash.see_all'),
-                      onAction: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const MyCreditsScreen()),
-                      ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: RefreshIndicator(
+              color: SimbisaColors.or,
+              onRefresh: _load,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(child: _buildHeader(_displayName, lang)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _buildWelcomeBanner(lang),
+                        const SizedBox(height: 20),
+                        _buildStatsGrid(lang),
+                        const SizedBox(height: 20),
+                        if (_activeCredit != null) _buildNextRepayment(context, lang),
+                        if (_activeCredit != null) const SizedBox(height: 20),
+                        SectionHeader(
+                          title: Tr.of(lang, 'dash.credit_history'),
+                          action: Tr.of(lang, 'dash.see_all'),
+                          onAction: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MyCreditsScreen()),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCreditList(lang),
+                        const SizedBox(height: 20),
+                        _buildQuickActions(context, lang),
+                        const SizedBox(height: 32),
+                      ]),
                     ),
-                    const SizedBox(height: 12),
-                    _buildCreditList(lang),
-                    const SizedBox(height: 20),
-                    _buildQuickActions(context, lang),
-                    const SizedBox(height: 32),
-                  ]),
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          if (_refreshing)
+            const Positioned(
+              top: 0, left: 0, right: 0,
+              child: LinearProgressIndicator(
+                color: SimbisaColors.or,
+                backgroundColor: Colors.transparent,
+                minHeight: 2,
+              ),
+            ),
+        ],
       ),
     );
   }

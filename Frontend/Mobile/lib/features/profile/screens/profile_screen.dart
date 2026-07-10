@@ -462,11 +462,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildKycStatus(ClientProfile profile) {
     final identiteOk = profile.identites.any((i) => i.isVerified && !i.isExpired);
+    final hasPendingId = profile.identites.any((i) => i.statutVerification == 'en_attente');
+    // (label, isOk, isPending, subtitle)
     final items = [
-      ('Identité vérifiée', identiteOk, identiteOk ? 'Document validé' : 'Soumettez une pièce d\'identité'),
-      ('Téléphone', true, profile.telephone),
-      ('KYC global', profile.kycValid, profile.kycValid ? 'Profil validé' : 'Validation en cours'),
-      ('E-mail', profile.email != null && profile.email!.isNotEmpty, profile.email ?? 'Non renseigné'),
+      (
+        'Identité vérifiée',
+        identiteOk,
+        !identiteOk && hasPendingId,
+        identiteOk
+            ? 'Document validé'
+            : (hasPendingId ? 'En cours de vérification par un agent (48h)' : 'Soumettez une pièce d\'identité'),
+      ),
+      ('Téléphone', true, false, profile.telephone),
+      ('KYC global', profile.kycValid, false, profile.kycValid ? 'Profil validé' : 'Validation en cours'),
+      ('E-mail', profile.email != null && profile.email!.isNotEmpty, false, profile.email ?? 'Non renseigné'),
     ];
 
     return NeuCard(
@@ -483,12 +492,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Container(
                     width: 36, height: 36,
                     decoration: BoxDecoration(
-                      color: (item.$2 ? SimbisaColors.success : SimbisaColors.muted).withValues(alpha: 0.12),
+                      color: (item.$2
+                              ? SimbisaColors.success
+                              : item.$3
+                                  ? SimbisaColors.or
+                                  : SimbisaColors.muted)
+                          .withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
-                      item.$2 ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                      color: item.$2 ? SimbisaColors.success : SimbisaColors.muted,
+                      item.$2
+                          ? Icons.check_circle_rounded
+                          : item.$3
+                              ? Icons.hourglass_top_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                      color: item.$2
+                          ? SimbisaColors.success
+                          : item.$3
+                              ? SimbisaColors.or
+                              : SimbisaColors.muted,
                       size: 18,
                     ),
                   ),
@@ -497,8 +519,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.$1, style: SimbisaText.body(13, weight: FontWeight.w600, color: item.$2 ? SimbisaColors.blanc : SimbisaColors.muted)),
-                        Text(item.$3, style: SimbisaText.body(11, color: SimbisaColors.muted)),
+                        Text(item.$1,
+                            style: SimbisaText.body(13,
+                                weight: FontWeight.w600,
+                                color: item.$2
+                                    ? SimbisaColors.blanc
+                                    : item.$3
+                                        ? SimbisaColors.or
+                                        : SimbisaColors.muted)),
+                        Text(item.$4, style: SimbisaText.body(11, color: SimbisaColors.muted)),
                       ],
                     ),
                   ),
