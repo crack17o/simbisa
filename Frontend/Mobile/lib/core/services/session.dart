@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../utils/mobile_money_operator.dart';
 
 class SessionUser {
@@ -41,4 +42,5 @@ class SessionUser {
 
 class Session {
   static SessionUser? current;
+  static VoidCallback? onExpired;
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, LogOut, User, LayoutDashboard, Shield, Sun, Moon, Globe } from 'lucide-react'
+import { Search, LogOut, User, LayoutDashboard, Shield, Sun, Moon, Globe, Menu } from 'lucide-react'
 import Avatar from '@/components/atoms/Avatar'
 import Input from '@/components/atoms/Input'
 import { useAuth } from '@/context/AuthContext'
@@ -15,7 +15,7 @@ function normalize(str) {
   return str.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
 }
 
-export default function TopBar({ title, user }) {
+export default function TopBar({ title, user, onMenuToggle }) {
   const navigate = useNavigate()
   const { logout, homeRoute } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -69,12 +69,23 @@ export default function TopBar({ title, user }) {
   }
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-panel/80 backdrop-blur-sm">
-      <div>
+    <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/5 bg-panel/80 backdrop-blur-sm">
+      <div className="flex items-center gap-3">
+        {onMenuToggle && (
+          <button
+            onClick={onMenuToggle}
+            className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center text-muted hover:text-or transition-colors neu-sm"
+            aria-label="Menu"
+          >
+            <Menu size={18} />
+          </button>
+        )}
+        <div>
         <h1 className="font-display font-bold text-xl text-blanc">{title}</h1>
-        <p className="text-xs text-muted mt-0.5">
-          {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
+          <p className="text-xs text-muted mt-0.5 hidden sm:block">
+            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

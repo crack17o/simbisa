@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserPlus, Users, FileCheck, Pencil, Eye } from 'lucide-react'
+import { UserPlus, Users, FileCheck, Pencil, Eye, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import FormField from '@/components/molecules/FormField'
@@ -27,6 +27,8 @@ export default function AgentClients() {
   const isAgent = user?.role === ROLES.AGENT
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [kycFilter, setKycFilter] = useState('all')
   const [creating, setCreating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -112,6 +114,20 @@ export default function AgentClients() {
     }
   }
 
+  const filteredClients = useMemo(() => {
+    const q = search.toLowerCase()
+    return clients.filter(c => {
+      const name = (c.utilisateur?.full_name || '').toLowerCase()
+      const phone = (c.utilisateur?.telephone || '').toLowerCase()
+      const matchesSearch = !q || name.includes(q) || phone.includes(q)
+      if (!matchesSearch) return false
+      if (kycFilter === 'all') return true
+      const lastId = c.identites?.[c.identites.length - 1]
+      const kyc = lastId?.statut_verification || (c.kyc_valid ? 'valide' : 'en_attente')
+      return kyc === kycFilter
+    })
+  }, [clients, search, kycFilter])
+
   const pendingKyc = clients.flatMap(c =>
     (c.identites || [])
       .filter(i => i.statut_verification === 'en_attente')
@@ -175,6 +191,28 @@ export default function AgentClients() {
           </form>
         )}
 
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher par nom ou téléphone…"
+              className="w-full neu-inset rounded-xl pl-9 pr-4 py-2.5 text-sm text-blanc placeholder-muted/50 outline-none bg-transparent"
+            />
+          </div>
+          <select
+            value={kycFilter}
+            onChange={e => setKycFilter(e.target.value)}
+            className="neu-inset rounded-xl px-4 py-2.5 text-sm text-blanc outline-none bg-surface"
+          >
+            <option value="all">Tous (KYC)</option>
+            <option value="valide">KYC validé</option>
+            <option value="en_attente">En attente</option>
+            <option value="rejete">Rejeté</option>
+          </select>
+        </div>
+
         {pendingKyc.length > 0 && (
           <section>
             <h2 className="font-semibold text-blanc mb-3 flex items-center gap-2">
@@ -210,14 +248,17 @@ export default function AgentClients() {
 
         <section>
           <h2 className="font-semibold text-blanc mb-3 flex items-center gap-2">
-            <Users size={18} className="text-or" /> Clients ({clients.length})
+            <Users size={18} className="text-or" /> Clients ({filteredClients.length}{filteredClients.length !== clients.length ? ` / ${clients.length}` : ''})
           </h2>
           {loading && <p className="text-sm text-muted">Chargement…</p>}
           {!loading && clients.length === 0 && (
             <p className="text-sm text-muted">Aucun client dans votre portefeuille.</p>
           )}
+          {!loading && clients.length > 0 && filteredClients.length === 0 && (
+            <p className="text-sm text-muted">Aucun client ne correspond aux filtres.</p>
+          )}
           <div className="flex flex-col gap-3">
-            {clients.map(c => {
+            {filteredClients.map(c => {
               const lastId = c.identites?.[c.identites.length - 1]
               const kyc = lastId?.statut_verification || (c.kyc_valid ? 'valide' : 'en_attente')
               return (

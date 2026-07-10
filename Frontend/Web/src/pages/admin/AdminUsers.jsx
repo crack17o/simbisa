@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import Button from '@/components/atoms/Button'
+import { Search } from 'lucide-react'
 import {
   listAdminUsers, listAdminCommunes, listAdminRoles,
   updateAdminUserCommune, updateAdminUserRole, updateAdminUserStatut,
@@ -14,12 +15,24 @@ const STATUTS = [
   { value: 'suspendu', label: 'Suspendu' },
 ]
 
+const ROLE_TABS = [
+  { value: 'all',              label: 'Tous' },
+  { value: 'Client',           label: 'Clients' },
+  { value: 'Agent de crédit',  label: 'Agents' },
+  { value: 'Analyste risque',  label: 'Analystes' },
+  { value: 'Responsable crédit', label: 'Responsables' },
+  { value: 'Auditeur',         label: 'Auditeurs' },
+  { value: 'Administrateur',   label: 'Admins' },
+]
+
 export default function AdminUsers() {
   const [users, setUsers] = useState([])
   const [communes, setCommunes] = useState([])
   const [roles, setRoles] = useState([])
   const [editing, setEditing] = useState(null)
   const [editState, setEditState] = useState({})
+  const [search, setSearch] = useState('')
+  const [roleTab, setRoleTab] = useState('all')
 
   const load = () => {
     Promise.all([listAdminUsers(), listAdminCommunes(), listAdminRoles()])
@@ -32,6 +45,19 @@ export default function AdminUsers() {
   }
 
   useEffect(() => { load() }, [])
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return users.filter(u => {
+      if (roleTab !== 'all' && u.role !== roleTab) return false
+      if (q) {
+        const name = (u.name || u.full_name || '').toLowerCase()
+        const phone = (u.telephone || '').toLowerCase()
+        if (!name.includes(q) && !phone.includes(q)) return false
+      }
+      return true
+    })
+  }, [users, search, roleTab])
 
   const communeLabel = (code) => communes.find(c => c.code === code)?.label || code || '—'
 
@@ -69,14 +95,54 @@ export default function AdminUsers() {
 
   return (
     <DashboardLayout title="Gestion des utilisateurs">
-      <p className="text-sm text-muted mb-4">
-        Gérez les rôles, statuts et communes des utilisateurs Simbisa.
-      </p>
       <div className="flex flex-col gap-4">
-        {users.length === 0 && (
-          <p className="text-sm text-muted">Aucun utilisateur.</p>
+        <p className="text-sm text-muted">
+          Gérez les rôles, statuts et communes des utilisateurs Simbisa.
+        </p>
+
+        {/* Search */}
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher par nom ou téléphone…"
+            className="w-full neu-inset rounded-xl pl-9 pr-4 py-2.5 text-sm text-blanc placeholder-muted/50 outline-none bg-transparent"
+          />
+        </div>
+
+        {/* Role tabs */}
+        <div className="flex flex-wrap gap-2">
+          {ROLE_TABS.map(t => (
+            <button
+              key={t.value}
+              onClick={() => setRoleTab(t.value)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                roleTab === t.value
+                  ? 'bg-or text-noir'
+                  : 'neu-sm text-muted hover:text-blanc'
+              }`}
+            >
+              {t.label}
+              {t.value !== 'all' && (
+                <span className="ml-1.5 opacity-60">
+                  ({users.filter(u => u.role === t.value).length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-muted">
+          {filtered.length} utilisateur{filtered.length !== 1 ? 's' : ''}
+          {filtered.length !== users.length ? ` sur ${users.length}` : ''}
+        </p>
+
+        {filtered.length === 0 && (
+          <p className="text-sm text-muted">Aucun utilisateur ne correspond.</p>
         )}
-        {users.map(u => (
+
+        {filtered.map(u => (
           <div key={u.id} className="neu-flat p-4 flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>

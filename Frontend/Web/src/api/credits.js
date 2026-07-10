@@ -33,3 +33,7 @@ export function submitDemandeDecision(demandeId, data) {
 export function getEcheances(creditId) {
   return apiRequest(`/api/v1/credits/${creditId}/echeances/`)
 }
+
+export function getDemande(demandeId) {
+  return apiRequest(`/api/v1/credits/demandes/${demandeId}/`)
+}

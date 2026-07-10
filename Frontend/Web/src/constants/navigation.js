@@ -39,7 +39,6 @@ export const NAV_BY_ROLE = {
     { to: '/risk/rules', icon: FileCheck, label: 'Règles métier', key: 'nav.rules' },
     { to: '/risk/models', icon: Activity, label: 'Performance modèles', key: 'nav.models' },
     { to: '/risk/documents', icon: FileText, label: 'Documents politique', key: 'nav.documents' },
-    { to: '/scoring', icon: BarChart3, label: 'Scoring détaillé', key: 'nav.scoring' },
     { to: '/help', icon: HelpCircle, label: 'Aide', key: 'nav.help' },
   ],
   [ROLES.ADMIN]: [

@@ -28,7 +28,7 @@ export default function RiskDocuments() {
 
   const load = useCallback(() => {
     listRagDocuments()
-      .then(res => setDocs(res.data || []))
+      .then(res => setDocs(Array.isArray(res.data) ? res.data : (res.data?.results || [])))
       .catch(err => toast.error(err.message))
   }, [])
 

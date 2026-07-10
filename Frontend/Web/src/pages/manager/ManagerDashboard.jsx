@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import StatCard from '@/components/molecules/StatCard'
 import Badge from '@/components/atoms/Badge'
 import Button from '@/components/atoms/Button'
-import { Shield, AlertTriangle, Sliders, CheckCircle, XCircle, Eye } from 'lucide-react'
+import { Shield, AlertTriangle, Sliders, CheckCircle, XCircle, Eye, Search } from 'lucide-react'
 import { getManagerDashboard } from '@/api/manager'
 import { submitDemandeDecision } from '@/api/credits'
 import { formatMoney } from '@/utils/apiHelpers'
@@ -15,6 +15,7 @@ export default function ManagerDashboard() {
   const [data, setData] = useState(null)
   const [hasError, setHasError] = useState(false)
   const [busyId, setBusyId] = useState(null)
+  const [search, setSearch] = useState('')
 
   const load = useCallback(() => {
     setHasError(false)
@@ -42,6 +43,15 @@ export default function ManagerDashboard() {
   }
 
   const dossiers = data?.dossiers || []
+  const filteredDossiers = useMemo(() => {
+    const q = search.toLowerCase()
+    if (!q) return dossiers
+    return dossiers.filter(d =>
+      d.ref?.toLowerCase().includes(q) ||
+      d.client?.toLowerCase().includes(q) ||
+      String(d.demande_id).includes(q)
+    )
+  }, [dossiers, search])
 
   return (
     <DashboardLayout title="Supervision crédit">
@@ -58,10 +68,19 @@ export default function ManagerDashboard() {
             <h3 className="font-display font-bold text-blanc">Approbations sensibles</h3>
             <Button variant="ghost" size="sm" onClick={() => navigate('/manager/exceptions')}>Exceptions →</Button>
           </div>
-          {dossiers.length === 0 && !hasError && (
-            <p className="text-sm text-muted">Aucun dossier sensible en attente.</p>
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher par ID, référence ou client…"
+              className="w-full neu-inset rounded-xl pl-9 pr-4 py-2.5 text-sm text-blanc placeholder-muted/50 outline-none bg-transparent"
+            />
+          </div>
+          {filteredDossiers.length === 0 && !hasError && (
+            <p className="text-sm text-muted">{dossiers.length === 0 ? 'Aucun dossier sensible en attente.' : 'Aucun dossier ne correspond à la recherche.'}</p>
           )}
-          {dossiers.map(d => (
+          {filteredDossiers.map(d => (
             <div key={d.demande_id} className="neu-sm p-4 flex items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">

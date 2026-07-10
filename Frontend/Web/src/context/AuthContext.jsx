@@ -109,6 +109,16 @@ export function AuthProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [silentRefresh])
 
+  // Redirect to login when a request fails with an unrecoverable 401
+  useEffect(() => {
+    function onSessionExpired() {
+      setUser(null)
+      setStoredAuth(null)
+    }
+    window.addEventListener('session:expired', onSessionExpired)
+    return () => window.removeEventListener('session:expired', onSessionExpired)
+  }, [])
+
   const login = useCallback(async (telephone, password, demoKey = null, otpOptions = {}) => {
     let creds = { telephone, password }
     if (demoKey && DEMO_USERS[demoKey]) {

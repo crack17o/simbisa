@@ -26,6 +26,7 @@ import AgentDashboard from '@/pages/AgentDashboard'
 import AgentRequests from '@/pages/agent/AgentRequests'
 import AgentClients from '@/pages/agent/AgentClients'
 import ClientDetail from '@/pages/agent/ClientDetail'
+import AgentRequestDetail from '@/pages/agent/AgentRequestDetail'
 
 import ManagerDashboard from '@/pages/manager/ManagerDashboard'
 import ManagerExceptions from '@/pages/manager/ManagerExceptions'
@@ -107,6 +108,11 @@ function AppRoutes() {
       <Route path="/agent/requests" element={
         <ProtectedRoute roles={[ROLES.AGENT, ROLES.MANAGER]}>
           <AgentRequests />
+        </ProtectedRoute>
+      } />
+      <Route path="/agent/requests/:id" element={
+        <ProtectedRoute roles={[ROLES.AGENT, ROLES.MANAGER]}>
+          <AgentRequestDetail />
         </ProtectedRoute>
       } />
 

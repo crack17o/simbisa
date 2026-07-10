@@ -2,10 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simbisa/core/constants/routes.dart';
 import 'package:simbisa/core/services/api_client.dart';
+import 'package:simbisa/core/services/client_service.dart';
 import 'package:simbisa/core/services/credit_service.dart';
 import 'package:simbisa/core/theme/app_theme.dart';
 import 'package:simbisa/core/theme/widgets.dart';
 import 'package:simbisa/core/utils/toast.dart';
+
+const _levelMax = {
+  'standard': 300.0,
+  'pro':      700.0,
+  'pro_plus': 1200.0,
+  'premium':  2500.0,
+};
+
+const _levelMaxMonths = {
+  'standard': 6,
+  'pro':      12,
+  'pro_plus': 12,
+  'premium':  12,
+};
 
 class CreditRequestScreen extends StatefulWidget {
   const CreditRequestScreen({super.key});
@@ -17,10 +32,34 @@ class CreditRequestScreen extends StatefulWidget {
 class _CreditRequestScreenState extends State<CreditRequestScreen> {
   final _amountCtrl = TextEditingController();
   final _service = CreditService();
+  final _clientService = ClientService();
   int _duree = 3;
   String? _motif;
   bool _loading = false;
   String? _error;
+  double _maxAmount = 1500;
+  int _maxMonths = 12;
+  String? _niveauCompte;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccountLevel();
+  }
+
+  Future<void> _loadAccountLevel() async {
+    try {
+      final profile = await _clientService.fetchProfile();
+      final level = profile.niveauCompte;
+      if (!mounted) return;
+      setState(() {
+        _niveauCompte = level;
+        _maxAmount = _levelMax[level] ?? 1500;
+        _maxMonths = _levelMaxMonths[level] ?? 12;
+        if (_duree > _maxMonths) _duree = _maxMonths;
+      });
+    } catch (_) {}
+  }
 
   final _motifs = [
     'Achat de stock commercial',
@@ -38,8 +77,8 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
 
   Future<void> _submit() async {
     final amount = double.tryParse(_amountCtrl.text) ?? 0;
-    if (amount < 50 || amount > 1500 || _motif == null) {
-      setState(() => _error = 'Montant (50–1500 USD) et motif requis.');
+    if (amount < 50 || amount > _maxAmount || _motif == null) {
+      setState(() => _error = 'Montant (50–${_maxAmount.toStringAsFixed(0)} USD) et motif requis.');
       return;
     }
 
@@ -122,8 +161,10 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
               const TextSpan(text: 'Montants entre '),
               TextSpan(text: '\$50', style: SimbisaText.body(13, color: SimbisaColors.or, weight: FontWeight.w600)),
               const TextSpan(text: ' et '),
-              TextSpan(text: '\$1 500', style: SimbisaText.body(13, color: SimbisaColors.or, weight: FontWeight.w600)),
-              const TextSpan(text: '. Décision automatique après analyse.'),
+              TextSpan(text: '\$${_maxAmount.toStringAsFixed(0)}', style: SimbisaText.body(13, color: SimbisaColors.or, weight: FontWeight.w600)),
+              if (_niveauCompte != null)
+                TextSpan(text: ' (niveau ${_niveauCompte!})', style: SimbisaText.body(11, color: SimbisaColors.muted)),
+              const TextSpan(text: '.'),
             ],
           )),
           const SizedBox(height: 24),
@@ -161,7 +202,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                   children: [
                     Text('1 mois', style: SimbisaText.body(12, color: SimbisaColors.muted)),
                     Text('$_duree mois', style: const TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700, color: SimbisaColors.orLight)),
-                    Text('12 mois', style: SimbisaText.body(12, color: SimbisaColors.muted)),
+                    Text('$_maxMonths mois', style: SimbisaText.body(12, color: SimbisaColors.muted)),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -174,14 +215,14 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                     trackHeight: 4,
                   ),
                   child: Slider(
-                    value: _duree.toDouble(),
-                    min: 1, max: 12, divisions: 11,
+                    value: _duree.clamp(1, _maxMonths).toDouble(),
+                    min: 1, max: _maxMonths.toDouble(), divisions: _maxMonths - 1,
                     onChanged: (v) => setState(() => _duree = v.round()),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  children: [1, 3, 6, 12].map((v) => Expanded(
+                  children: ({1, 3, 6, _maxMonths}.toList()..sort()).map((v) => Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 3),
                       child: GestureDetector(

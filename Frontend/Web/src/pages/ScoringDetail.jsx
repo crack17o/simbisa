@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import ScoringPanel from '@/components/organisms/ScoringPanel'
 import Button from '@/components/atoms/Button'
-import { BarChart2, Info, Search, RefreshCw } from 'lucide-react'
+import { BarChart2, Info, Search, RefreshCw, FileText } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
 import { ROLES } from '@/constants/roles'
@@ -108,6 +108,19 @@ export default function ScoringDetail() {
           <Button icon={RefreshCw} variant="secondary" loading={triggering} onClick={handleTrigger}>
             Relancer scoring
           </Button>
+        </div>
+      )}
+
+      {/* RAG Memo */}
+      {(detail?.decision?.explication_ia) && (
+        <div className="neu-flat p-6 flex flex-col gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <FileText size={18} style={{ color: '#D4AF37' }} />
+            <h2 className="font-display font-bold text-blanc">Mémo IA</h2>
+          </div>
+          <p className="text-sm text-blanc whitespace-pre-wrap leading-relaxed">
+            {detail.decision.explication_ia}
+          </p>
         </div>
       )}
 

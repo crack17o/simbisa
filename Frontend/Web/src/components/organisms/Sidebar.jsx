@@ -11,7 +11,7 @@ import { getNavItems, getRoleLabel } from '@/constants/navigation'
 import { ROLES } from '@/constants/roles'
 import { getClientStats } from '@/api/clients'
 
-export default function Sidebar({ user }) {
+export default function Sidebar({ user, mobileOpen, onMobileClose }) {
   const [collapsed, setCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [pendingKyc, setPendingKyc] = useState(0)
@@ -41,7 +41,9 @@ export default function Sidebar({ user }) {
       className={clsx(
         'flex flex-col h-screen bg-panel transition-all duration-300',
         'border-r border-white/5',
-        collapsed ? 'w-20' : 'w-64'
+        'fixed md:relative z-50 md:z-auto',
+        collapsed ? 'w-20' : 'w-64',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       )}
       style={{ boxShadow: '4px 0 20px rgba(0,0,0,0.4)' }}
     >
@@ -54,17 +56,27 @@ export default function Sidebar({ user }) {
             <span className="font-display font-bold text-or text-sm">S</span>
           </div>
         )}
+        {/* Desktop collapse button */}
         <button
           onClick={() => setCollapsed(p => !p)}
           className={clsx(
-            'w-7 h-7 rounded-lg flex items-center justify-center',
+            'w-7 h-7 rounded-lg items-center justify-center hidden md:flex',
             'text-muted hover:text-or transition-colors',
             'shadow-neu-sm bg-panel',
-            collapsed && 'hidden'
+            collapsed && '!hidden'
           )}
         >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          <ChevronLeft size={14} />
         </button>
+        {/* Mobile close button */}
+        {onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            className="md:hidden w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-or transition-colors shadow-neu-sm bg-panel"
+          >
+            <ChevronLeft size={14} />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto p-3 flex flex-col gap-1">
@@ -120,7 +132,7 @@ export default function Sidebar({ user }) {
       {collapsed && (
         <button
           onClick={() => setCollapsed(false)}
-          className="mx-auto mb-4 w-8 h-8 rounded-lg flex items-center justify-center
+          className="mx-auto mb-4 w-8 h-8 rounded-lg hidden md:flex items-center justify-center
                      text-muted hover:text-or shadow-neu-sm bg-panel transition-colors"
         >
           <ChevronRight size={14} />

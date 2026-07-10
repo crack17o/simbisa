@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simbisa/core/constants/routes.dart';
+import 'package:simbisa/core/services/session.dart';
 import 'package:simbisa/core/theme/app_theme.dart';
 import 'package:simbisa/features/credit/screens/credit_request_screen.dart';
 import 'package:simbisa/features/dashboard/screens/dashboard_screen.dart';
@@ -40,6 +43,15 @@ class _ClientShellState extends State<ClientShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex.clamp(0, _pageWidgets.length - 1);
+    Session.onExpired = () {
+      if (mounted) context.go(AppRoutes.login);
+    };
+  }
+
+  @override
+  void dispose() {
+    Session.onExpired = null;
+    super.dispose();
   }
 
   @override

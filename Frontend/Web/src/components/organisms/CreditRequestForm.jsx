@@ -5,6 +5,7 @@ import Button from '@/components/atoms/Button'
 import clsx from 'clsx'
 import { submitCreditRequest } from '@/api/credits'
 import { getExchangeRate } from '@/api/settings'
+import { getMyProfile } from '@/api/clients'
 
 const MOTIFS = [
   'Achat de stock commercial',
@@ -14,9 +15,24 @@ const MOTIFS = [
   'Autre',
 ]
 
+const LEVEL_LIMITS = {
+  standard: { maxUsd: 300,  maxMonths: 6  },
+  pro:      { maxUsd: 700,  maxMonths: 12 },
+  pro_plus: { maxUsd: 1200, maxMonths: 12 },
+  premium:  { maxUsd: 2500, maxMonths: 12 },
+}
+
+const LEVEL_LABELS = {
+  standard: 'Standard',
+  pro: 'Pro',
+  pro_plus: 'Pro+',
+  premium: 'Premium',
+}
+
 export default function CreditRequestForm({ onSubmit, onError }) {
   const [form, setForm] = useState({ montant: '', duree: '3', motif: '', devise: 'USD' })
   const [limits, setLimits] = useState({ usd_min: 50, usd_max: 1500, cdf_min: 112500, cdf_max: 3375000 })
+  const [niveauCompte, setNiveauCompte] = useState(null)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
 
@@ -32,16 +48,34 @@ export default function CreditRequestForm({ onSubmit, onError }) {
         })
       })
       .catch(() => {})
+
+    getMyProfile()
+      .then(res => {
+        const level = res.data?.niveau_compte || res.niveau_compte
+        if (level) setNiveauCompte(level)
+      })
+      .catch(() => {})
   }, [])
 
+  const levelLimits = niveauCompte ? LEVEL_LIMITS[niveauCompte] : null
+
   const min = form.devise === 'CDF' ? limits.cdf_min : limits.usd_min
-  const max = form.devise === 'CDF' ? limits.cdf_max : limits.usd_max
+  const maxFromRate = form.devise === 'CDF' ? limits.cdf_max : limits.usd_max
+
+  // Level limit overrides global max if it's more restrictive
+  const maxUsdFromLevel = levelLimits?.maxUsd ?? null
+  const maxFromLevel = maxUsdFromLevel != null && form.devise === 'USD'
+    ? Math.min(maxFromRate, maxUsdFromLevel)
+    : maxFromRate
+  const max = maxFromLevel
+
+  const maxMonths = levelLimits?.maxMonths ?? 12
 
   const validate = () => {
     const e = {}
     const m = +form.montant
     if (!form.montant || m < min) e.montant = `Montant minimum : ${min} ${form.devise}`
-    if (m > max) e.montant = `Montant maximum : ${max} ${form.devise}`
+    if (m > max) e.montant = `Montant maximum : ${max} ${form.devise}${niveauCompte ? ` (niveau ${LEVEL_LABELS[niveauCompte] || niveauCompte})` : ''}`
     if (!form.motif) e.motif = "Veuillez préciser l'objet du crédit"
     return e
   }
@@ -68,9 +102,19 @@ export default function CreditRequestForm({ onSubmit, onError }) {
     }
   }
 
+  // Clamp duree if maxMonths changed
+  const dureeNum = Math.min(parseInt(form.duree, 10), maxMonths)
+
   return (
     <form onSubmit={handleSubmit} className="neu-flat p-6 flex flex-col gap-5">
-      <h2 className="font-display font-bold text-blanc text-lg">Nouvelle demande de micro-crédit</h2>
+      <div className="flex items-start justify-between">
+        <h2 className="font-display font-bold text-blanc text-lg">Nouvelle demande de micro-crédit</h2>
+        {niveauCompte && (
+          <span className="text-xs px-2.5 py-1 rounded-lg font-semibold" style={{ background: '#D4AF3718', color: '#D4AF37' }}>
+            Niveau {LEVEL_LABELS[niveauCompte] || niveauCompte}
+          </span>
+        )}
+      </div>
       <p className="text-sm text-muted">
         Plages : <span className="text-or">{min}</span> — <span className="text-or">{max}</span> {form.devise}
       </p>
@@ -107,14 +151,14 @@ export default function CreditRequestForm({ onSubmit, onError }) {
         <div className="neu-inset p-4 rounded-xl flex flex-col gap-3">
           <div className="flex justify-between text-sm font-semibold">
             <span className="text-muted">1 mois</span>
-            <span className="text-or-light">{form.duree} mois</span>
-            <span className="text-muted">12 mois</span>
+            <span className="text-or-light">{dureeNum} mois</span>
+            <span className="text-muted">{maxMonths} mois</span>
           </div>
           <input
             type="range"
             min={1}
-            max={12}
-            value={form.duree}
+            max={maxMonths}
+            value={dureeNum}
             onChange={e => setForm(p => ({ ...p, duree: e.target.value }))}
             className="w-full accent-or"
           />

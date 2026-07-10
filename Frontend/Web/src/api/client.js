@@ -52,6 +52,19 @@ export async function refreshAccessToken(refreshToken) {
   return data
 }
 
+// Singleton : si plusieurs requêtes expirent en même temps, un seul refresh
+// est lancé. Les autres attendent le même résultat pour éviter de blacklister
+// le token tournant (ROTATE_REFRESH_TOKENS=True).
+let _pendingRefresh = null
+function safeRefresh(refreshToken) {
+  if (!_pendingRefresh) {
+    _pendingRefresh = refreshAccessToken(refreshToken).finally(() => {
+      _pendingRefresh = null
+    })
+  }
+  return _pendingRefresh
+}
+
 export async function apiRequest(path, { method = 'GET', body, auth = true, headers = {}, retry = true } = {}) {
   const stored = getStoredAuth()
   const reqHeaders = { Accept: 'application/json', ...headers }
@@ -78,16 +91,17 @@ export async function apiRequest(path, { method = 'GET', body, auth = true, head
 
   if (res.status === 401 && auth && stored?.refreshToken && retry) {
     try {
-      const tokens = await refreshAccessToken(stored.refreshToken)
+      const tokens = await safeRefresh(stored.refreshToken)
       setStoredAuth({
         ...stored,
         accessToken: tokens.access,
-        refreshToken: tokens.refresh,
+        refreshToken: tokens.refresh ?? stored.refreshToken,
         token: tokens.access,
       })
       return apiRequest(path, { method, body, auth, headers, retry: false })
     } catch {
       setStoredAuth(null)
+      window.dispatchEvent(new Event('session:expired'))
       throw new ApiError({ error: { message: 'Session expirée. Reconnectez-vous.' } }, 401)
     }
   }
@@ -113,11 +127,12 @@ export async function fetchAuthFile(url, retried = false) {
 
   if (res.status === 401 && !retried && stored?.refreshToken) {
     try {
-      const tokens = await refreshAccessToken(stored.refreshToken)
-      setStoredAuth({ ...stored, accessToken: tokens.access, refreshToken: tokens.refresh, token: tokens.access })
+      const tokens = await safeRefresh(stored.refreshToken)
+      setStoredAuth({ ...stored, accessToken: tokens.access, refreshToken: tokens.refresh ?? stored.refreshToken, token: tokens.access })
       return fetchAuthFile(url, true)
     } catch {
       setStoredAuth(null)
+      window.dispatchEvent(new Event('session:expired'))
       throw new Error('Session expirée. Reconnectez-vous.')
     }
   }
