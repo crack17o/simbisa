@@ -33,3 +33,11 @@ export function updateAdminUserStatut(userId, statut) {
     body: { statut },
   })
 }
+
+export function adminResetUserPassword(userId) {
+  return apiRequest(`/api/v1/admin/users/${userId}/reset-password/`, { method: 'POST' })
+}
+
+export function agentResetClientPassword(clientId) {
+  return apiRequest(`/api/v1/admin/clients/${clientId}/reset-password/`, { method: 'POST' })
+}

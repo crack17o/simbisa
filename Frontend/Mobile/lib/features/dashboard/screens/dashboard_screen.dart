@@ -47,11 +47,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   List<CreditDemandeItem> _credits = [];
   CreditDemandeItem? _activeCredit;
 
-  static const _kName      = 'simbisa_dash_name';
-  static const _kProfil    = 'simbisa_dash_score_profil';
-  static const _kGlobal    = 'simbisa_dash_score_global';
-  static const _kRisk      = 'simbisa_dash_risk';
-  static const _kKyc       = 'simbisa_dash_kyc';
+  static const _kName      = 'simbisa_dash_v2_name';
+  static const _kProfil    = 'simbisa_dash_v2_score_profil';
+  static const _kGlobal    = 'simbisa_dash_v2_score_global';
+  static const _kRisk      = 'simbisa_dash_v2_risk';
+  static const _kKyc       = 'simbisa_dash_v2_kyc';
 
   @override
   void initState() {

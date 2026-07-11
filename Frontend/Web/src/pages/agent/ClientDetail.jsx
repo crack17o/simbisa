@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ChevronRight, Pencil, CheckCircle, XCircle, Eye, ArrowLeft, Save, X } from 'lucide-react'
+import { ChevronRight, Pencil, CheckCircle, XCircle, Eye, ArrowLeft, Save, X, KeyRound } from 'lucide-react'
 import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Button from '@/components/atoms/Button'
 import Badge from '@/components/atoms/Badge'
 import FormField from '@/components/molecules/FormField'
 import { getClientById, updateClientByAgent, verifyKyc, fetchKycFile } from '@/api/clients'
+import { agentResetClientPassword } from '@/api/admin'
 import { useAuth } from '@/context/AuthContext'
 import { ROLES } from '@/constants/roles'
 
@@ -37,6 +38,7 @@ export default function ClientDetail() {
   const [saving, setSaving] = useState(false)
   const [verifyingKyc, setVerifyingKyc] = useState(false)
   const [openingDoc, setOpeningDoc] = useState(false)
+  const [resettingPassword, setResettingPassword] = useState(false)
   const [editForm, setEditForm] = useState({})
 
   const loadClient = async () => {
@@ -92,6 +94,20 @@ export default function ClientDetail() {
       toast.error(err.message)
     } finally {
       setVerifyingKyc(false)
+    }
+  }
+
+  const handleResetPassword = async () => {
+    const name = client?.utilisateur?.full_name || [client?.utilisateur?.prenom, client?.utilisateur?.nom].filter(Boolean).join(' ') || 'ce client'
+    if (!window.confirm(`Réinitialiser le mot de passe de ${name} ?\n\nUn e-mail lui sera envoyé avec le mot de passe temporaire.`)) return
+    setResettingPassword(true)
+    try {
+      await agentResetClientPassword(id)
+      toast.success('Mot de passe réinitialisé, e-mail envoyé.')
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setResettingPassword(false)
     }
   }
 
@@ -158,9 +174,12 @@ export default function ClientDetail() {
           </div>
 
           {isAgent && (
-            <div className="mt-4 pt-4 border-t border-white/5">
+            <div className="mt-4 pt-4 border-t border-white/5 flex gap-2 flex-wrap">
               <Button size="sm" icon={Pencil} onClick={() => setEditing(v => !v)} variant={editing ? 'ghost' : 'secondary'}>
                 {editing ? 'Annuler' : 'Modifier les informations'}
+              </Button>
+              <Button size="sm" variant="ghost" icon={KeyRound} loading={resettingPassword} onClick={handleResetPassword}>
+                Réinitialiser MDP
               </Button>
             </div>
           )}

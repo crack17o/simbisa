@@ -24,7 +24,7 @@ class _ScoringScreenState extends State<ScoringScreen> {
   ClientScoreData? _score;
 
   static const _motorColors = [SimbisaColors.or, SimbisaColors.blue, SimbisaColors.purple, SimbisaColors.teal];
-  static const _kCache = 'simbisa_cache_score_v1';
+  static const _kCache = 'simbisa_cache_score_v2';
 
   @override
   void initState() {
@@ -68,6 +68,9 @@ class _ScoringScreenState extends State<ScoringScreen> {
         setState(() { _error = e.message; _loading = false; _refreshing = false; });
       } else {
         setState(() => _refreshing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Actualisation impossible : ${e.message}'), backgroundColor: SimbisaColors.danger),
+        );
       }
     }
   }

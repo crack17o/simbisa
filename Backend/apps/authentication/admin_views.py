@@ -4,7 +4,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 
-from apps.core.permissions import IsAdministrateur
+from apps.core.permissions import IsAdministrateur, IsAgentOrManager
+from apps.authentication.services.session_security import revoke_all_sessions
 from apps.core.kinshasa_communes import KINSHASA_COMMUNES, COMMUNE_CODES
 from apps.authentication.models import Role, Utilisateur
 from apps.authentication.serializers import UtilisateurPublicSerializer
@@ -93,6 +94,69 @@ def admin_update_user_view(request, user_id):
         'success': True,
         'message': 'Utilisateur mis à jour.',
         'data': UtilisateurPublicSerializer(user).data,
+    })
+
+
+_DEFAULT_PASSWORD = 'Simbisa2025!'
+
+
+@extend_schema(tags=['Admin'])
+@api_view(['POST'])
+@permission_classes([IsAdministrateur])
+def admin_reset_any_password_view(request, user_id):
+    try:
+        user = Utilisateur.objects.get(pk=user_id)
+    except Utilisateur.DoesNotExist:
+        return Response(
+            {'success': False, 'error': {'message': 'Utilisateur introuvable.'}},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    user.set_password(_DEFAULT_PASSWORD)
+    user.save(update_fields=['password', 'updated_at'])
+    revoke_all_sessions(user)
+
+    from apps.authentication.services.email_service import send_temp_password_email
+    send_temp_password_email(user, actor_name=request.user.full_name, default_password=_DEFAULT_PASSWORD)
+
+    return Response({
+        'success': True,
+        'message': f'Mot de passe réinitialisé. E-mail envoyé à {user.email or "adresse inconnue"}.',
+    })
+
+
+@extend_schema(tags=['Admin'])
+@api_view(['POST'])
+@permission_classes([IsAgentOrManager])
+def agent_reset_client_password_view(request, client_id):
+    from apps.clients.models import Client
+    from apps.clients.services.territoire import can_agent_access_client
+
+    try:
+        client = Client.objects.select_related('id_utilisateur').get(pk=client_id)
+    except Client.DoesNotExist:
+        return Response(
+            {'success': False, 'error': {'message': 'Client introuvable.'}},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if not can_agent_access_client(request.user, client):
+        return Response(
+            {'success': False, 'error': {'message': 'Accès refusé : client hors de votre zone.'}},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    user = client.id_utilisateur
+    user.set_password(_DEFAULT_PASSWORD)
+    user.save(update_fields=['password', 'updated_at'])
+    revoke_all_sessions(user)
+
+    from apps.authentication.services.email_service import send_temp_password_email
+    send_temp_password_email(user, actor_name=request.user.full_name, default_password=_DEFAULT_PASSWORD)
+
+    return Response({
+        'success': True,
+        'message': f'Mot de passe réinitialisé. E-mail envoyé à {user.email or "adresse inconnue"}.',
     })
 
 

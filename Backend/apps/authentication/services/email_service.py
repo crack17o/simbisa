@@ -179,6 +179,41 @@ def send_login_attempt_email(user, ctx: dict, reasons: list[str]) -> None:
     logger.info(f"Alerte connexion -> {mask_email(user.email)}")
 
 
+def send_temp_password_email(user, actor_name: str, default_password: str = 'Simbisa2025!') -> None:
+    if not user.email:
+        return
+    year = timezone.now().year
+    html = f"""<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:20px;margin:0">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:32px">
+    <h2 style="color:#1a1a2e;margin-top:0">Réinitialisation de votre mot de passe Simbisa</h2>
+    <p style="color:#333">Bonjour <strong>{user.full_name}</strong>,</p>
+    <p style="color:#333">Votre mot de passe a été réinitialisé par <strong>{actor_name}</strong>.</p>
+    <p style="color:#333">Votre nouveau mot de passe temporaire est :</p>
+    <div style="background:#f0f0f0;padding:16px 24px;border-radius:6px;text-align:center;margin:20px 0">
+      <span style="font-size:22px;font-weight:bold;letter-spacing:3px;color:#1a1a2e;font-family:monospace">{default_password}</span>
+    </div>
+    <p style="color:#333">Connectez-vous avec ce mot de passe, puis modifiez-le immédiatement depuis votre profil.</p>
+    <p style="color:#888;font-size:12px;border-top:1px solid #eee;padding-top:16px;margin-bottom:0">Simbisa Rawbank &middot; {year}</p>
+  </div>
+</body>
+</html>"""
+    text = (
+        f"Bonjour {user.full_name},\n\n"
+        f"Votre mot de passe Simbisa a été réinitialisé par {actor_name}.\n\n"
+        f"Mot de passe temporaire : {default_password}\n\n"
+        f"Connectez-vous puis changez-le immédiatement depuis votre profil."
+    )
+    _send_html_email(
+        subject='Simbisa — Réinitialisation de votre mot de passe',
+        to=[user.email],
+        html=html,
+        text=text,
+    )
+    logger.info(f"Reset MDP -> {mask_email(user.email)} (par {actor_name})")
+
+
 def create_password_reset_token(user) -> str:
     import secrets
     token = secrets.token_urlsafe(32)

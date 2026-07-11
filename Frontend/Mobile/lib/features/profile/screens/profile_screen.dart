@@ -138,7 +138,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() {
         _profile = profile;
         _mmAccounts = mm;
-        _score = scoreData.scoreClient.round();
+        _score = scoreData.scoreProfil.round();
         _professionCtrl.text = profile.profession;
         _adresseCtrl.text = profile.adresse;
         _loading = false;
@@ -146,10 +146,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       showToastError(context, e.message);
-      setState(() {
-        _hasError = true;
-        _loading = false;
-      });
+      setState(() { _hasError = true; _loading = false; });
+    } catch (_) {
+      if (!mounted) return;
+      showToastError(context, 'Impossible de charger le profil.');
+      setState(() { _hasError = true; _loading = false; });
     }
   }
 

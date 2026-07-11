@@ -3,10 +3,11 @@ import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import Button from '@/components/atoms/Button'
-import { Search } from 'lucide-react'
+import { Search, KeyRound } from 'lucide-react'
 import {
   listAdminUsers, listAdminCommunes, listAdminRoles,
   updateAdminUserCommune, updateAdminUserRole, updateAdminUserStatut,
+  adminResetUserPassword,
 } from '@/api/admin'
 
 const STATUTS = [
@@ -33,6 +34,7 @@ export default function AdminUsers() {
   const [editState, setEditState] = useState({})
   const [search, setSearch] = useState('')
   const [roleTab, setRoleTab] = useState('all')
+  const [resettingId, setResettingId] = useState(null)
 
   const load = () => {
     Promise.all([listAdminUsers(), listAdminCommunes(), listAdminRoles()])
@@ -71,6 +73,20 @@ export default function AdminUsers() {
   }
 
   const cancelEdit = () => { setEditing(null); setEditState({}) }
+
+  const handleResetPassword = async (u) => {
+    const name = u.name || u.full_name
+    if (!window.confirm(`Réinitialiser le mot de passe de ${name} ?\n\nUn e-mail sera envoyé avec le mot de passe temporaire.`)) return
+    setResettingId(u.id)
+    try {
+      await adminResetUserPassword(u.id)
+      toast.success(`Mot de passe de ${name} réinitialisé.`)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setResettingId(null)
+    }
+  }
 
   const saveUser = async (u) => {
     try {
@@ -156,7 +172,15 @@ export default function AdminUsers() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  size="sm" variant="ghost" icon={KeyRound}
+                  loading={resettingId === u.id}
+                  onClick={() => handleResetPassword(u)}
+                  title="Réinitialiser le mot de passe"
+                >
+                  MDP
+                </Button>
                 {editing === u.id ? (
                   <>
                     <Button size="sm" onClick={() => saveUser(u)}>Enregistrer</Button>
