@@ -48,7 +48,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   CreditDemandeItem? _activeCredit;
 
   static const _kName      = 'simbisa_dash_v2_name';
-  static const _kProfil    = 'simbisa_dash_v2_score_profil';
   static const _kGlobal    = 'simbisa_dash_v2_score_global';
   static const _kRisk      = 'simbisa_dash_v2_risk';
   static const _kKyc       = 'simbisa_dash_v2_kyc';
@@ -66,7 +65,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (name != null && name.isNotEmpty && mounted) {
         setState(() {
           _displayName = name;
-          _scoreProfil = prefs.getInt(_kProfil) ?? 0;
           _scoreGlobal = prefs.getInt(_kGlobal) ?? 0;
           _riskLevel   = prefs.getString(_kRisk) ?? '—';
           _kycValid    = prefs.getBool(_kKyc) ?? false;
@@ -117,7 +115,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       // Persist key scalars for next cold start
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kName,   _displayName);
-      await prefs.setInt(_kProfil,    _scoreProfil);
       await prefs.setInt(_kGlobal,    _scoreGlobal);
       await prefs.setString(_kRisk,   _riskLevel);
       await prefs.setBool(_kKyc,      _kycValid);

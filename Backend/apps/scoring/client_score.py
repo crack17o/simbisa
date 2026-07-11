@@ -24,18 +24,14 @@ def _score_from_demande(demande: DemandeCredit) -> Optional[float]:
 
 
 def _score_profil_client(client, devise: str) -> float:
-    """Score de profil (MM + comportemental + IA neutre) si aucune décision crédit."""
+    """Score de profil = (MM + comportemental) / 2.
+
+    Exclut les moteurs règles et IA qui nécessitent une vraie demande de crédit.
+    Un client sans historique obtient 0, pas un score artificiel.
+    """
     mm = MobileMoneyEngine(client=client, devise=devise).run()
     behav = BehavioralEngine(client=client, devise=devise).run()
-
-    aggregation = ScoreAggregator().aggregate(
-        score_regles=100.0,
-        score_mm=mm['score'],
-        score_comportemental=behav['score'],
-        score_ia=50.0,
-        regles_ok=True,
-    )
-    return aggregation['score_global']
+    return round((mm['score'] + behav['score']) / 2, 2)
 
 
 def score_pour_devise(client, devise: str) -> dict:
