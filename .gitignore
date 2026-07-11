@@ -50,3 +50,4 @@ Thumbs.db
 
 # ML artefacts volumineux (optionnel — décommenter si besoin)
 # mltraining/models/*.joblib
+simbisa.apk

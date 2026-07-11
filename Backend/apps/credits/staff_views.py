@@ -1,4 +1,5 @@
 import logging
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -85,6 +86,25 @@ class DecisionInputSerializer(Serializer):
 
 
 @extend_schema(tags=['Credits — Agent'])
+@api_view(['GET'])
+@permission_classes([IsAgentOrManager])
+def demande_detail_view(request, demande_pk):
+    try:
+        demande = _demande_queryset(request.user).get(pk=demande_pk)
+    except DemandeCredit.DoesNotExist:
+        return Response(
+            {'success': False, 'error': {'message': 'Demande introuvable.'}},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    if not can_agent_access_client(request.user, demande.id_client):
+        return Response(
+            {'success': False, 'error': {'message': 'Ce dossier n\'est pas dans votre zone.'}},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    return Response({'success': True, 'data': serialize_demande(demande)})
+
+
+@extend_schema(tags=['Credits — Agent'])
 @api_view(['POST'])
 @permission_classes([IsAgentOrManager])
 def demande_decision_view(request, demande_pk):
@@ -123,3 +143,42 @@ def demande_decision_view(request, demande_pk):
 
     logger.info(f"Décision manuelle demande #{demande_pk} par {request.user.telephone}")
     return Response({'success': True, 'message': 'Décision enregistrée.', 'data': result})
+
+
+@extend_schema(tags=['Credits — Agent'])
+@api_view(['POST'])
+@permission_classes([IsAgentOrManager])
+def cloturer_demande_view(request, demande_pk):
+    try:
+        demande = _demande_queryset(request.user).get(pk=demande_pk)
+    except DemandeCredit.DoesNotExist:
+        return Response(
+            {'success': False, 'error': {'message': 'Demande introuvable.'}},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if not can_agent_access_client(request.user, demande.id_client):
+        return Response(
+            {'success': False, 'error': {'message': 'Ce dossier n\'est pas dans votre zone.'}},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if demande.statut == 'cloture':
+        return Response(
+            {'success': False, 'error': {'message': 'Dossier déjà clôturé.'}},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    class ClotureInputSerializer(Serializer):
+        motif = CharField(max_length=500, min_length=3)
+
+    s = ClotureInputSerializer(data=request.data)
+    s.is_valid(raise_exception=True)
+
+    with transaction.atomic():
+        demande.motif_cloture = s.validated_data['motif']
+        demande.statut = 'cloture'
+        demande.save(update_fields=['statut', 'motif_cloture', 'updated_at'])
+
+    logger.info(f"Dossier #{demande_pk} clôturé par {request.user.telephone} — motif: {s.validated_data['motif']}")
+    return Response({'success': True, 'message': 'Dossier clôturé avec succès.'})

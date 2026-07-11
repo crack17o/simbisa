@@ -4,8 +4,8 @@ import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Badge from '@/components/atoms/Badge'
 import Button from '@/components/atoms/Button'
-import { ArrowLeft, BarChart2, FileText, Info, CheckCircle, XCircle, MessageSquare } from 'lucide-react'
-import { getDemande, submitDemandeDecision } from '@/api/credits'
+import { ArrowLeft, BarChart2, FileText, Info, CheckCircle, XCircle, MessageSquare, Lock } from 'lucide-react'
+import { getDemande, submitDemandeDecision, cloturerDemande } from '@/api/credits'
 import { getScoringDetail } from '@/api/scoring'
 import { formatDate } from '@/utils/formatters'
 import { formatMoney } from '@/utils/apiHelpers'
@@ -21,6 +21,9 @@ export default function AgentRequestDetail() {
   const [loading, setLoading] = useState(true)
   const [observation, setObservation] = useState('')
   const [busy, setBusy] = useState(null)
+  const [cloturerOpen, setCloturerOpen] = useState(false)
+  const [motifCloture, setMotifCloture] = useState('')
+  const [busyCloture, setBusyCloture] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -53,6 +56,21 @@ export default function AgentRequestDetail() {
       toast.error(err.message)
     } finally {
       setBusy(null)
+    }
+  }
+
+  const handleCloturer = async () => {
+    if (!motifCloture.trim()) return
+    setBusyCloture(true)
+    try {
+      await cloturerDemande(id, motifCloture.trim())
+      toast.success('Dossier clôturé.')
+      setCloturerOpen(false)
+      navigate('/agent/requests')
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setBusyCloture(false)
     }
   }
 
@@ -104,16 +122,23 @@ export default function AgentRequestDetail() {
                   {formatDate(demande.date_demande)}
                 </p>
               </div>
-              {demande.statut === 'en_analyse' && (
-                <div className="flex gap-2">
-                  <Button icon={CheckCircle} loading={busy === 'approuve'} onClick={() => handleDecision('approuve')}>
-                    Approuver
+              <div className="flex gap-2 flex-wrap">
+                {demande.statut === 'en_analyse' && (
+                  <>
+                    <Button icon={CheckCircle} loading={busy === 'approuve'} onClick={() => handleDecision('approuve')}>
+                      Approuver
+                    </Button>
+                    <Button variant="danger" icon={XCircle} loading={busy === 'rejete'} onClick={() => handleDecision('rejete')}>
+                      Rejeter
+                    </Button>
+                  </>
+                )}
+                {demande.statut !== 'cloture' && (
+                  <Button variant="secondary" icon={Lock} onClick={() => setCloturerOpen(true)}>
+                    Clôturer
                   </Button>
-                  <Button variant="danger" icon={XCircle} loading={busy === 'rejete'} onClick={() => handleDecision('rejete')}>
-                    Rejeter
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -188,6 +213,39 @@ export default function AgentRequestDetail() {
           </>
         )}
       </div>
+
+      {cloturerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="neu-flat p-6 w-full max-w-md flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <Lock size={18} style={{ color: '#D4AF37' }} />
+              <h3 className="font-display font-bold text-blanc text-lg">Clôturer le dossier</h3>
+            </div>
+            <p className="text-sm text-muted">Indiquez le motif de clôture. Cette action est définitive.</p>
+            <textarea
+              value={motifCloture}
+              onChange={e => setMotifCloture(e.target.value)}
+              placeholder="Ex : Remboursement intégral hors délai, accord à l'amiable…"
+              rows={3}
+              className="w-full neu-inset rounded-xl px-4 py-3 text-sm text-blanc placeholder-muted/50 outline-none resize-none bg-transparent"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary" onClick={() => { setCloturerOpen(false); setMotifCloture('') }}>
+                Annuler
+              </Button>
+              <Button
+                variant="danger"
+                icon={Lock}
+                loading={busyCloture}
+                onClick={handleCloturer}
+                disabled={!motifCloture.trim()}
+              >
+                Confirmer la clôture
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }

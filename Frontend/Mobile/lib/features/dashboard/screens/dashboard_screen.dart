@@ -36,6 +36,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   bool _loading = true;
   bool _refreshing = false;
+  bool _paying = false;
   String? _error;
   String _displayName = '';
   bool _kycValid = false;
@@ -159,17 +160,75 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
     if (confirm != true) return;
 
+    setState(() => _paying = true);
     try {
       await _creditService.rembourser(creditId: credit.id, montant: montant);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(Tr.of(lang, 'dash.repay_ok'))),
+      setState(() => _paying = false);
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Theme.of(ctx).brightness == Brightness.dark ? SimbisaColors.panel : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(color: SimbisaColors.success.withValues(alpha: 0.12), shape: BoxShape.circle),
+                child: const Icon(Icons.check_circle_rounded, color: SimbisaColors.success, size: 32),
+              ),
+              const SizedBox(height: 16),
+              const Text('Opération réussie', style: TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              Text(
+                '${formatMoney(sym, montant, decimals: 2)} remboursé avec succès.',
+                textAlign: TextAlign.center,
+                style: SimbisaText.body(13, color: SimbisaColors.muted),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: NeuButton(
+                  onTap: () => Navigator.pop(ctx),
+                  child: const Text('Fermer'),
+                ),
+              ),
+            ],
+          ),
+        ),
       );
       _load();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: SimbisaColors.danger),
+      setState(() => _paying = false);
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Theme.of(ctx).brightness == Brightness.dark ? SimbisaColors.panel : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(color: SimbisaColors.danger.withValues(alpha: 0.12), shape: BoxShape.circle),
+                child: const Icon(Icons.cancel_rounded, color: SimbisaColors.danger, size: 32),
+              ),
+              const SizedBox(height: 16),
+              const Text('Échec du paiement', style: TextStyle(fontFamily: 'Sora', fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              Text(e.message, textAlign: TextAlign.center, style: SimbisaText.body(13, color: SimbisaColors.muted)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: NeuButton(onTap: () => Navigator.pop(ctx), child: const Text('Fermer')),
+              ),
+            ],
+          ),
+        ),
       );
     }
   }
@@ -534,8 +593,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           NeuButton(
-            onTap: _payNextInstallment,
-            child: Text(Tr.of(lang, 'action.pay'), style: const TextStyle(fontSize: 12)),
+            onTap: _paying ? null : _payNextInstallment,
+            child: _paying
+                ? const SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: SimbisaColors.or),
+                  )
+                : Text(Tr.of(lang, 'action.pay'), style: const TextStyle(fontSize: 12)),
           ),
         ],
       ),

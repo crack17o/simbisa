@@ -10,11 +10,13 @@ import { useLang } from '@/context/LangContext'
 import { getNavItems, getRoleLabel } from '@/constants/navigation'
 import { ROLES } from '@/constants/roles'
 import { getClientStats } from '@/api/clients'
+import { getDemandesStats } from '@/api/credits'
 
 export default function Sidebar({ user, mobileOpen, onMobileClose }) {
   const [collapsed, setCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [pendingKyc, setPendingKyc] = useState(0)
+  const [pendingDemandes, setPendingDemandes] = useState(0)
   const { logout } = useAuth()
   const { t } = useLang()
   const navigate = useNavigate()
@@ -26,6 +28,9 @@ export default function Sidebar({ user, mobileOpen, onMobileClose }) {
     if (user?.role !== ROLES.AGENT && user?.role !== ROLES.MANAGER) return
     getClientStats()
       .then(res => setPendingKyc(res.data?.pending_kyc ?? 0))
+      .catch(() => {})
+    getDemandesStats()
+      .then(res => setPendingDemandes(res.data?.dossiers_en_attente ?? 0))
       .catch(() => {})
   }, [user?.role])
 
@@ -86,7 +91,11 @@ export default function Sidebar({ user, mobileOpen, onMobileClose }) {
             {...item}
             label={t(item.key) || item.label}
             collapsed={collapsed}
-            badge={item.to === '/agent/clients' ? pendingKyc : undefined}
+            badge={
+              item.to === '/agent/clients' ? pendingKyc :
+              item.to === '/agent/requests' ? pendingDemandes :
+              undefined
+            }
           />
         ))}
       </nav>

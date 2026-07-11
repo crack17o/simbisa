@@ -26,6 +26,7 @@ class DemandeCredit(TimestampedModel):
         validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
     motif = models.TextField(blank=True)
+    motif_cloture = models.TextField(blank=True, default='')
     statut = models.CharField(max_length=30, choices=STATUTS, default='en_analyse')
     date_demande = models.DateTimeField(auto_now_add=True)
 

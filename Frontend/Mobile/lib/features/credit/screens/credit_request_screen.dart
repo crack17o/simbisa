@@ -6,7 +6,7 @@ import 'package:simbisa/core/services/client_service.dart';
 import 'package:simbisa/core/services/credit_service.dart';
 import 'package:simbisa/core/theme/app_theme.dart';
 import 'package:simbisa/core/theme/widgets.dart';
-import 'package:simbisa/core/utils/toast.dart';
+
 
 const _levelMax = {
   'standard': 300.0,
@@ -104,15 +104,51 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
       }
 
       final bool isSuccess = result.isApproved || result.isPending || result.timedOut;
-      if (isSuccess) {
-        showToastSuccess(context, toastMsg);
-      } else {
-        showToastWarning(context, toastMsg);
-      }
 
       _amountCtrl.clear();
       setState(() { _duree = 3; _motif = null; _error = null; _loading = false; });
-      context.go(AppRoutes.dashboard);
+
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF4F4F8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  color: (isSuccess ? SimbisaColors.success : SimbisaColors.warning).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isSuccess ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                  color: isSuccess ? SimbisaColors.success : SimbisaColors.warning,
+                  size: 38,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isSuccess ? 'Demande soumise' : 'Demande rejetée',
+                style: const TextStyle(fontFamily: 'Sora', fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(toastMsg, textAlign: TextAlign.center, style: SimbisaText.body(13, color: SimbisaColors.muted).copyWith(height: 1.5)),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () { Navigator.pop(ctx); context.go(AppRoutes.dashboard); },
+              style: TextButton.styleFrom(foregroundColor: SimbisaColors.or),
+              child: const Text('Tableau de bord'),
+            ),
+          ],
+        ),
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() { _error = e.message; _loading = false; });
@@ -173,7 +209,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: SimbisaColors.danger.withOpacity(0.1),
+                color: SimbisaColors.danger.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(_error!, style: SimbisaText.body(13, color: SimbisaColors.danger)),
@@ -211,7 +247,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                     activeTrackColor: SimbisaColors.or,
                     inactiveTrackColor: isDark ? const Color(0xFF232323) : Colors.black.withValues(alpha: 0.1),
                     thumbColor: SimbisaColors.orLight,
-                    overlayColor: SimbisaColors.or.withOpacity(0.1),
+                    overlayColor: SimbisaColors.or.withValues(alpha: 0.1),
                     trackHeight: 4,
                   ),
                   child: Slider(
@@ -266,7 +302,7 @@ class _CreditRequestScreenState extends State<CreditRequestScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: sel ? null : SimbisaColors.panel,
-                    border: Border.all(color: sel ? SimbisaColors.or.withOpacity(0.5) : Colors.transparent),
+                    border: Border.all(color: sel ? SimbisaColors.or.withValues(alpha: 0.5) : Colors.transparent),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: sel ? NeuShadow.goldGlow() : NeuShadow.sm(),
                   ),

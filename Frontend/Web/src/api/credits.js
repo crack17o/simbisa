@@ -37,3 +37,7 @@ export function getEcheances(creditId) {
 export function getDemande(demandeId) {
   return apiRequest(`/api/v1/credits/demandes/${demandeId}/`)
 }
+
+export function cloturerDemande(demandeId, motif) {
+  return apiRequest(`/api/v1/credits/demandes/${demandeId}/cloturer/`, { method: 'POST', body: { motif } })
+}

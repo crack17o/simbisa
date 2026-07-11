@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import Button from '@/components/atoms/Button'
 import Badge from '@/components/atoms/Badge'
-import { CreditCard, DollarSign } from 'lucide-react'
+import { CreditCard, DollarSign, CheckCircle, XCircle, RotateCcw } from 'lucide-react'
 import { getMyCredits, submitRepayment } from '@/api/credits'
 import { formatMoney, mapDecisionLabel } from '@/utils/apiHelpers'
 
@@ -13,6 +13,7 @@ export default function Repayments() {
   const [amount, setAmount] = useState('')
   const [modePaiement, setModePaiement] = useState('illicocash')
   const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
 
   const MODES = [
     { value: 'illicocash', label: 'illicocash' },
@@ -44,11 +45,16 @@ export default function Repayments() {
         montant: String(amount),
         mode_paiement: modePaiement,
       })
-      toast.success(res.message || 'Paiement enregistré.')
+      setResult({
+        success: true,
+        message: res.message || 'Opération réussie.',
+        amount: formatMoney(amount, item?.devise),
+        mode: MODES.find(m => m.value === modePaiement)?.label,
+      })
       setAmount('')
       load()
     } catch (err) {
-      toast.error(err.message)
+      setResult({ success: false, message: err.message })
     } finally {
       setLoading(false)
     }
@@ -58,9 +64,30 @@ export default function Repayments() {
     <DashboardLayout title="Remboursements">
       <div className="flex flex-col gap-6 max-w-2xl">
 
-        {!credit && <p className="text-sm text-muted">Aucun crédit en cours à rembourser.</p>}
+        {result && (
+          <div
+            className="neu-flat p-6 flex flex-col items-center gap-4 text-center"
+            style={{ borderColor: result.success ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)', border: '1px solid' }}
+          >
+            {result.success
+              ? <CheckCircle size={40} className="text-success" />
+              : <XCircle size={40} className="text-danger" />
+            }
+            <div>
+              <p className="font-display font-bold text-lg text-blanc">{result.message}</p>
+              {result.amount && (
+                <p className="text-sm text-muted mt-1">{result.amount} · {result.mode}</p>
+              )}
+            </div>
+            <Button variant="secondary" icon={RotateCcw} onClick={() => setResult(null)}>
+              Nouveau remboursement
+            </Button>
+          </div>
+        )}
 
-        {credit && (
+        {!credit && !result && <p className="text-sm text-muted">Aucun crédit en cours à rembourser.</p>}
+
+        {credit && !result && (
           <div className="neu-flat p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

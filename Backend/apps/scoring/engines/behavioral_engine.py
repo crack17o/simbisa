@@ -60,6 +60,7 @@ class BehavioralEngine:
         }
 
     def _score_remboursement(self) -> tuple:
+        from datetime import date
         credits_passes = Credit.objects.filter(
             id_demande__id_client=self.client,
             id_demande__devise=self.devise,
@@ -67,21 +68,43 @@ class BehavioralEngine:
         )
 
         if not credits_passes.exists():
-            return 20.0, {'nb_credits_passes': 0, 'taux_remboursement_pct': 50}
+            score = 20.0
+            features = {'nb_credits_passes': 0, 'taux_remboursement_pct': 50}
+        else:
+            total = credits_passes.count()
+            rembourses = credits_passes.filter(statut='rembourse').count()
+            taux = rembourses / total if total > 0 else 0
+            defauts = total - rembourses
+            penalite = defauts * 15
+            score = taux * 40 - penalite
+            features = {
+                'nb_credits_passes': total,
+                'nb_credits_rembourses': rembourses,
+                'nb_defauts': defauts,
+                'taux_remboursement_pct': round(taux * 100, 1),
+            }
 
-        total = credits_passes.count()
-        rembourses = credits_passes.filter(statut='rembourse').count()
-        taux = rembourses / total if total > 0 else 0
-        defauts = total - rembourses
-        penalite = defauts * 15
-        score = taux * 40 - penalite
+        # Penalise active credits whose scheduled end date has passed (-0.5 per 5 days late)
+        today = date.today()
+        credits_en_retard = Credit.objects.filter(
+            id_demande__id_client=self.client,
+            id_demande__devise=self.devise,
+            statut='en_cours',
+            date_fin__lt=today,
+        )
+        retard_penalite = 0.0
+        max_jours_retard = 0
+        for c in credits_en_retard:
+            jours = (today - c.date_fin).days
+            retard_penalite += (jours // 5) * 0.5
+            max_jours_retard = max(max_jours_retard, jours)
 
-        return max(score, 0), {
-            'nb_credits_passes': total,
-            'nb_credits_rembourses': rembourses,
-            'nb_defauts': defauts,
-            'taux_remboursement_pct': round(taux * 100, 1),
-        }
+        if retard_penalite > 0:
+            score -= retard_penalite
+            features['retard_remboursement_jours'] = max_jours_retard
+            features['penalite_retard'] = round(retard_penalite, 1)
+
+        return max(score, 0), features
 
     def _score_activite(self) -> tuple:
         from django.utils import timezone

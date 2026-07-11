@@ -101,5 +101,5 @@ class IdentiteItem {
     );
   }
 
-  bool get isVerified => statutVerification == 'verifie';
+  bool get isVerified => statutVerification == 'valide';
 }

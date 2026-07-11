@@ -77,21 +77,21 @@ export default function MyCredits() {
             </p>
           )}
           {filtered.map(c => (
-            <div key={c.demande_id} className="neu-flat p-5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#D4AF3715', color: '#D4AF37' }}>
+            <div key={c.demande_id} className="neu-flat p-4 sm:p-5 flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ background: '#D4AF3715', color: '#D4AF37' }}>
                   <CreditCard size={18} />
                 </div>
-                <div>
-                  <p className="font-semibold text-blanc">#{c.demande_id} · {c.devise}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold text-blanc truncate">#{c.demande_id} · {c.devise}</p>
                   <p className="text-xs text-muted">
                     {c.duree_mois} {t('label.months')}
                     {c.credit?.mensualite ? ` · ${formatMoney(c.credit.mensualite, c.devise)}${t('label.month_abbr')}` : ''}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xl font-display font-bold text-blanc">{formatMoney(c.montant_demande, c.devise)}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-blanc whitespace-nowrap">{formatMoney(c.montant_demande, c.devise)}</span>
                 <Badge label={mapDecisionLabel(c.statut)} />
                 {c.credit && (
                   <Button

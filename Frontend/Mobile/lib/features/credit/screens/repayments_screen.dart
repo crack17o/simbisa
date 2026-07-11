@@ -80,6 +80,8 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
       showToastError(context, 'Saisissez un montant valide.');
       return;
     }
+    final symbole = _selected!.symbole;
+    final modeLabel = _modeLabels[_mode] ?? _mode;
     setState(() => _paying = true);
     try {
       await _service.rembourser(
@@ -88,11 +90,78 @@ class _RepaymentsScreenState extends State<RepaymentsScreen> {
         modePaiement: _mode,
       );
       if (!mounted) return;
-      showToastSuccess(context, 'Remboursement de ${formatMoney(_selected!.symbole, montant)} enregistré.');
       _montantCtrl.clear();
-      context.go(AppRoutes.dashboard);
+      await _load();
+      if (!mounted) return;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF4F4F8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(color: SimbisaColors.success.withValues(alpha: 0.15), shape: BoxShape.circle),
+                child: const Icon(Icons.check_circle_rounded, color: SimbisaColors.success, size: 38),
+              ),
+              const SizedBox(height: 16),
+              const Text('Opération réussie', style: TextStyle(fontFamily: 'Sora', fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(formatMoney(symbole, montant), style: SimbisaText.body(14, color: SimbisaColors.orLight, weight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text('via $modeLabel', style: SimbisaText.body(12, color: SimbisaColors.muted)),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Nouveau remboursement'),
+            ),
+            TextButton(
+              onPressed: () { Navigator.pop(ctx); context.go(AppRoutes.dashboard); },
+              style: TextButton.styleFrom(foregroundColor: SimbisaColors.or),
+              child: const Text('Tableau de bord'),
+            ),
+          ],
+        ),
+      );
     } on ApiException catch (e) {
-      if (mounted) showToastError(context, e.message);
+      if (!mounted) return;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF4F4F8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(color: SimbisaColors.danger.withValues(alpha: 0.15), shape: BoxShape.circle),
+                child: const Icon(Icons.cancel_rounded, color: SimbisaColors.danger, size: 38),
+              ),
+              const SizedBox(height: 16),
+              const Text('Échec du remboursement', style: TextStyle(fontFamily: 'Sora', fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(e.message, textAlign: TextAlign.center, style: SimbisaText.body(13, color: SimbisaColors.muted)),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(foregroundColor: SimbisaColors.or),
+              child: const Text('Fermer'),
+            ),
+          ],
+        ),
+      );
     } finally {
       if (mounted) setState(() => _paying = false);
     }

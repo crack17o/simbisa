@@ -25,6 +25,9 @@ export function registerApi(data) {
       commune_kinshasa: data.commune_kinshasa,
       password: data.password,
       password_confirm: data.password_confirm,
+      adresse: data.adresse || '',
+      profession: data.profession || '',
+      date_naissance: data.date_naissance || null,
     },
   })
 }
