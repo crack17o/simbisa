@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,7 +38,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _error;
   String _displayName = '';
   bool _kycValid = false;
-  int _scoreProfil = 0;
   int _scoreGlobal = 0;
   String _riskLevel = '—';
   SavingsAccount? _savings;
@@ -103,7 +100,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ? profile.fullName
             : (Session.current?.fullName ?? 'Client');
         _kycValid    = profile.kycValid;
-        _scoreProfil = scoreData.scoreProfil.round();
         _scoreGlobal = scoreData.scoreClient.round();
         _riskLevel   = riskLabel(scoreData.niveauRisque ?? profile.niveauRisque);
         _savings     = savings;
@@ -488,7 +484,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
           ),
-          ScoreRing(score: _scoreProfil, size: 90, label: Tr.of(lang, 'dash.my_score')),
+          ScoreRing(score: _scoreGlobal, size: 90, label: Tr.of(lang, 'dash.my_score')),
         ],
       ),
     );

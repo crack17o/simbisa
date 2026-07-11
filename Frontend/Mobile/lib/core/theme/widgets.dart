@@ -338,6 +338,16 @@ class _ScoreRingState extends State<ScoreRing> with SingleTickerProviderStateMix
   }
 
   @override
+  void didUpdateWidget(ScoreRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.score != widget.score) {
+      _anim = Tween(begin: _anim.value, end: widget.score / 100)
+          .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+      _ctrl.forward(from: 0);
+    }
+  }
+
+  @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
