@@ -58,9 +58,7 @@ export default function Dashboard() {
 
   const activeCredit = credits.find(c => c.credit?.statut === 'en_cours')
   const recentCredits = credits.slice(0, 3)
-  // Mon Score = score_profil : calculé depuis le profil MM/comportemental (toujours frais)
-  // Score global = score_client : moyenne agrégée USD/CDF (inclut les décisions crédit si disponibles)
-  const myScore = score?.score_profil ?? score?.score_client ?? 0
+  const myScore = score?.score_client ?? 0
   const globalScore = score?.score_client ?? 0
 
   if (loading) {

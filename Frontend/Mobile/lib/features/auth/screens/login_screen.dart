@@ -42,6 +42,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
+  void _sanitizePhone() {
+    final text = _phoneCtrl.text;
+    if (text.startsWith('0') && text.length > 1) {
+      _phoneCtrl.text = text.substring(1);
+    }
+  }
+
   Future<void> _login() async {
     if (_phoneCtrl.text.isEmpty || _pwdCtrl.text.isEmpty) {
       showToastError(context, 'Veuillez remplir tous les champs.');
@@ -174,6 +181,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             prefix: const Text('🇨🇩 +243 ', style: TextStyle(fontSize: 13, color: SimbisaColors.muted, fontWeight: FontWeight.w600)),
             controller: _phoneCtrl,
             keyboardType: TextInputType.phone,
+            onChanged: (_) => _sanitizePhone(),
           ),
           const SizedBox(height: 16),
           NeuTextField(

@@ -137,7 +137,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _updateMmHint() {
-    final raw = _phoneCtrl.text.trim();
+    var raw = _phoneCtrl.text.trim();
+
+    if (raw.startsWith('0')) {
+      if (raw.length == 1) { setState(() => _mmHint = null); return; }
+      final stripped = raw.substring(1);
+      _phoneCtrl.text = stripped;
+      raw = stripped;
+    }
+
     if (raw.isEmpty) { setState(() => _mmHint = null); return; }
     try {
       final normalized = AuthService.normalizePhone(raw);
