@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from django.conf import settings
 from django.shortcuts import render
@@ -49,12 +50,24 @@ def _handle_ussd_request(request) -> Response:
     ser.is_valid(raise_exception=True)
     data = ser.validated_data
 
-    result = _run_ussd(
-        session_id=data.get('session_id') or '',
-        msisdn=data['msisdn'],
-        user_input=data.get('input', ''),
-        channel=f"callback:{data.get('operator', 'simulated')}",
-    )
+    try:
+        result = _run_ussd(
+            session_id=data.get('session_id') or '',
+            msisdn=data['msisdn'],
+            user_input=data.get('input', ''),
+            channel=f"callback:{data.get('operator', 'simulated')}",
+        )
+    except Exception as exc:
+        tb = traceback.format_exc()
+        logger.error(f"USSD unhandled exception: {exc}\n{tb}")
+        return Response({
+            'success': False,
+            'error': {
+                'code': 'ussd_error',
+                'message': str(exc),
+                'traceback': tb,
+            },
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     logger.info(f"USSD callback {result['session_id']} -> {result['response_type']}")
 
