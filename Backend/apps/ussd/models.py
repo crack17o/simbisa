@@ -52,7 +52,7 @@ class UssdInteractionLog(models.Model):
     response_type = models.CharField(max_length=3)
     response_message = models.TextField()
     menu_state = models.CharField(max_length=40, blank=True)
-    channel = models.CharField(max_length=20, default='simulator')
+    channel = models.CharField(max_length=100, default='simulator')
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
