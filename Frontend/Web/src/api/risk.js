@@ -19,3 +19,7 @@ export function getRiskModels() {
 export function getRiskModelStatus() {
   return apiRequest('/api/v1/risk/model-status/')
 }
+
+export function triggerRetrain() {
+  return apiRequest('/api/v1/risk/retrain/', { method: 'POST' })
+}

@@ -25,6 +25,7 @@ class UssdSessionStore:
             return {**DEFAULT_STATE, 'session_id': self.session_id}
         data = json.loads(raw) if isinstance(raw, str) else raw
         data.setdefault('session_id', self.session_id)
+        data.setdefault('ctx', {})
         return data
 
     def save(self, data: dict) -> None:

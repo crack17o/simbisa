@@ -47,6 +47,52 @@ def _serialize_decision(d: DecisionCredit) -> dict:
 
 @api_view(['GET'])
 @permission_classes([IsAuditeur])
+def audit_decision_detail_view(request, pk):
+    try:
+        d = DecisionCredit.objects.select_related(
+            'id_demande__id_client__id_utilisateur', 'id_agent',
+        ).get(pk=pk)
+    except DecisionCredit.DoesNotExist:
+        return Response({'success': False, 'error': {'message': 'Décision introuvable.'}}, status=404)
+
+    demande = d.id_demande
+    client = demande.id_client
+    utilisateur = client.id_utilisateur
+
+    score_ia_data = None
+    try:
+        sia = demande.score_ia
+        score_ia_data = {
+            'probabilite_defaut_pct': round(float(sia.probabilite_defaut) * 100, 2),
+            'niveau_risque': sia.niveau_risque,
+            'score_normalise': float(sia.score_normalise),
+            'modele_utilise': sia.modele_utilise,
+            'shap_values': sia.shap_values,
+            'feature_vector': sia.feature_vector,
+        }
+    except Exception:
+        pass
+
+    return Response({
+        'success': True,
+        'data': {
+            **_serialize_decision(d),
+            'duree_mois': demande.duree_mois,
+            'motif_demande': demande.motif,
+            'date_demande': demande.date_demande,
+            'statut_demande': demande.statut,
+            'client_telephone': utilisateur.telephone if utilisateur else None,
+            'client_date_naissance': str(client.date_naissance) if client.date_naissance else None,
+            'client_adresse': getattr(client, 'adresse', None),
+            'client_profession': getattr(client, 'profession', None),
+            'recommandation_ia': d.recommandation_ia,
+            'score_ia': score_ia_data,
+        },
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuditeur])
 def audit_decisions_view(request):
     qs = DecisionCredit.objects.select_related(
         'id_demande__id_client__id_utilisateur', 'id_agent',

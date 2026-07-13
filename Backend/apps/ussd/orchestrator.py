@@ -3,7 +3,7 @@ from apps.ussd.msisdn import normalize_msisdn
 from apps.ussd.session import UssdSessionStore
 from apps.ussd import services
 from apps.ussd.models import UssdProfile
-from apps.core.currency import symbole, get_credit_limits, USD, CDF
+from apps.core.currency import symbole, get_credit_limits, valider_montant_credit, USD, CDF
 
 
 class UssdOrchestrator:

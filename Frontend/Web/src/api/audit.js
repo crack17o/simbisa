@@ -17,3 +17,7 @@ export function listAuditReports() {
 export function generateAuditReport(data = {}) {
   return apiRequest('/api/v1/audit/reports/', { method: 'POST', body: data })
 }
+
+export function getAuditDecision(id) {
+  return apiRequest(`/api/v1/audit/decisions/${id}/`)
+}

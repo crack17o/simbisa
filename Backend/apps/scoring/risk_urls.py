@@ -6,4 +6,5 @@ urlpatterns = [
     path('rules/', risk_views.risk_rules_view, name='risk-rules'),
     path('models/', risk_views.risk_models_view, name='risk-models'),
     path('model-status/', risk_views.risk_model_status_view, name='risk-model-status'),
+    path('retrain/', risk_views.risk_retrain_view, name='risk-retrain'),
 ]

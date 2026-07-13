@@ -4,7 +4,6 @@ from pathlib import Path
 from django.conf import settings
 from django.db.models import Avg
 from django.utils import timezone
-from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer, CharField, BooleanField, DecimalField, ListField
@@ -217,4 +216,27 @@ def risk_model_status_view(request):
                 'task_name': 'Simbisa — Retrain XGBoost (décisions agents) — 03:00',
             },
         },
+    })
+
+
+@extend_schema(tags=['Risk'])
+@api_view(['POST'])
+@permission_classes([IsAnalysteRisque])
+def risk_retrain_view(request):
+    """Lance un ré-entraînement manuel du modèle XGBoost (en arrière-plan)."""
+    import threading
+    from django.core.management import call_command
+
+    def _run():
+        try:
+            call_command('retrain_xgboost')
+        except Exception as exc:
+            logger.error(f"Retrain manuel échoué : {exc}")
+
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+
+    return Response({
+        'success': True,
+        'message': 'Ré-entraînement lancé en arrière-plan. Consultez le statut dans quelques minutes.',
     })

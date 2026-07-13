@@ -139,7 +139,7 @@ class _ScoringScreenState extends State<ScoringScreen> {
 
   Widget _buildGlobalScore(ClientScoreData score) {
     final risk = riskLabel(score.niveauRisque);
-    final scoreInt = score.scoreProfil.round();
+    final scoreInt = score.scoreClient.round();
 
     return NeuCard(
       child: Column(

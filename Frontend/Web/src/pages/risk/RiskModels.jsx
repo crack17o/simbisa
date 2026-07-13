@@ -3,28 +3,45 @@ import { toast } from 'sonner'
 import DashboardLayout from '@/components/templates/DashboardLayout'
 import StatCard from '@/components/molecules/StatCard'
 import Badge from '@/components/atoms/Badge'
-import { Activity, BarChart2, Cpu, Server } from 'lucide-react'
-import { getRiskModels, getRiskDashboard, getRiskModelStatus } from '@/api/risk'
+import Button from '@/components/atoms/Button'
+import { Activity, BarChart2, Cpu, Server, RefreshCw } from 'lucide-react'
+import { getRiskModels, getRiskDashboard, getRiskModelStatus, triggerRetrain } from '@/api/risk'
 
 export default function RiskModels() {
   const [data, setData] = useState(null)
   const [dash, setDash] = useState(null)
-  const [status, setStatus] = useState(null)
+  const [modelStatus, setModelStatus] = useState(null)
+  const [retraining, setRetraining] = useState(false)
 
-  useEffect(() => {
+  const load = () =>
     Promise.all([getRiskModels(), getRiskDashboard(), getRiskModelStatus()])
       .then(([modelsRes, dashRes, statusRes]) => {
         setData(modelsRes.data)
         setDash(dashRes.data)
-        setStatus(statusRes.data)
+        setModelStatus(statusRes.data)
       })
       .catch(err => toast.error(err.message))
-  }, [])
+
+  useEffect(() => { load() }, [])
+
+  const handleRetrain = async () => {
+    setRetraining(true)
+    try {
+      const res = await triggerRetrain()
+      toast.success(res.message || 'Ré-entraînement lancé.')
+      setTimeout(load, 4000)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setRetraining(false)
+    }
+  }
 
   const active = data?.modele_actif
   const historique = data?.historique || []
   const auc = dash?.auc_modele ?? null
   const seuil = dash?.seuil_approbation ?? null
+  const lastRun = modelStatus?.last_training_run
 
   return (
     <DashboardLayout title="Performance des modèles">
@@ -53,11 +70,33 @@ export default function RiskModels() {
           />
           <StatCard
             label="Statut moteur IA"
-            value={status?.status === 'ok' ? 'Opérationnel' : status?.status || '—'}
-            sub={status?.model_loaded ? 'Modèle chargé' : 'Modèle non chargé'}
+            value={modelStatus?.model_file ? 'Opérationnel' : '—'}
+            sub={modelStatus?.model_file ? 'Modèle chargé' : 'Modèle non chargé'}
             icon={Server}
-            accentColor={status?.status === 'ok' ? '#34D399' : '#EF4444'}
+            accentColor={modelStatus?.model_file ? '#34D399' : '#EF4444'}
           />
+        </div>
+
+        {/* Bouton retrain */}
+        <div className="neu-flat p-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-display font-bold text-blanc">Ré-entraînement manuel</p>
+            <p className="text-sm text-muted mt-1">
+              {lastRun
+                ? `Dernier entraînement : ${lastRun.model_version || lastRun.model_name} — ${lastRun.status} — ${lastRun.n_samples ?? '?'} échantillons`
+                : 'Aucun historique d\'entraînement disponible.'}
+            </p>
+            <p className="text-xs text-muted mt-1">
+              Planification automatique : {modelStatus?.schedule?.time ?? '03:00'} ({modelStatus?.schedule?.timezone ?? 'Africa/Kinshasa'})
+            </p>
+          </div>
+          <Button
+            icon={RefreshCw}
+            loading={retraining}
+            onClick={handleRetrain}
+          >
+            Relancer l'entraînement
+          </Button>
         </div>
 
         <div className="flex flex-col gap-4">
