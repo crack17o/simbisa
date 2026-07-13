@@ -13,7 +13,7 @@ DEFAULT_STATE = {
 class UssdSessionStore:
     def __init__(self, session_id: str | None = None):
         self.session_id = session_id or str(uuid.uuid4())
-        self.ttl = getattr(settings, 'USSD_SESSION_TTL', 180)
+        self.ttl = getattr(settings, 'USSD_SESSION_TTL', 900)
 
     @property
     def cache_key(self) -> str:

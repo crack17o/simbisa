@@ -46,6 +46,10 @@ class UssdOrchestrator:
             result = self._handle_init(client, inp)
         elif state == 'AUTH_PIN':
             result = self._handle_auth_pin(client, inp)
+        elif state == 'PIN_SETUP':
+            result = self._handle_pin_setup(client, inp)
+        elif state == 'PIN_SETUP_CONFIRM':
+            result = self._handle_pin_setup_confirm(client, inp)
         elif state == 'MAIN':
             result = self._handle_main(client, inp)
         elif state == 'BALANCE_DEVISE':
@@ -78,12 +82,41 @@ class UssdOrchestrator:
         if profile.is_locked():
             return self._finish('PIN bloque 15 min. Reessayez plus tard.', end=True)
 
-        self.data['state'] = 'AUTH_PIN'
         name = self.data.get('client_name', 'Client')
+
+        if not profile.pin_hash:
+            self.data['state'] = 'PIN_SETUP'
+            return self._finish(
+                f'SIMBISA Rawbank\nBonjour {name}.\n'
+                'Premiere connexion.\nChoisissez un PIN USSD (4 chiffres):',
+                end=False,
+            )
+
+        self.data['state'] = 'AUTH_PIN'
         return self._finish(
             f'SIMBISA Rawbank\nBonjour {name}.\nEntrez PIN USSD (4 chiffres):',
             end=False,
         )
+
+    def _handle_pin_setup(self, client, inp: str) -> dict:
+        if not inp or len(inp) != 4 or not inp.isdigit():
+            return self._finish('PIN invalide.\n4 chiffres requis:', end=False)
+        self.data['ctx']['new_pin'] = inp
+        self.data['state'] = 'PIN_SETUP_CONFIRM'
+        return self._finish('Confirmez votre PIN:', end=False)
+
+    def _handle_pin_setup_confirm(self, client, inp: str) -> dict:
+        new_pin = self.data['ctx'].get('new_pin')
+        if inp != new_pin:
+            self.data['ctx'].pop('new_pin', None)
+            self.data['state'] = 'PIN_SETUP'
+            return self._finish('PINs differents.\nChoisissez un nouveau PIN:', end=False)
+        profile = UssdProfile.objects.get(client=client)
+        profile.set_pin(inp)
+        self.data['ctx'].pop('new_pin', None)
+        self.data['authenticated'] = True
+        self.data['state'] = 'MAIN'
+        return self._finish(f'PIN defini. Connexion OK.\n{self._main_menu()}', end=False)
 
     def _handle_auth_pin(self, client, inp: str) -> dict:
         if not inp or len(inp) != 4 or not inp.isdigit():
