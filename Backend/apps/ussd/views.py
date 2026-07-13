@@ -109,13 +109,15 @@ def ussd_simulator_page(request):
     if not getattr(settings, 'USSD_SIMULATOR_ENABLED', settings.DEBUG):
         return Response({'error': 'Simulateur desactive.'}, status=403)
 
-    demo_phones = [
-        '+243900000010',
-        '+243900000011',
-        '+243900000012',
-    ]
+    from apps.authentication.models import Utilisateur
+    clients = (
+        Utilisateur.objects
+        .filter(role__nom_role='Client', statut='actif')
+        .values_list('telephone', flat=True)
+        .order_by('telephone')[:50]
+    )
     return render(request, 'ussd/simulator.html', {
-        'demo_phones': demo_phones,
+        'demo_phones': list(clients),
         'default_pin': getattr(settings, 'USSD_DEFAULT_PIN', '0000'),
         'api_url': '/api/v1/ussd/simulate/',
     })

@@ -74,11 +74,12 @@
     <div id="screen" class="screen">Composez *123# pour demarrer…</div>
 
     <label>Numero (MSISDN)</label>
-    <select id="msisdn">
+    <input id="msisdn" type="tel" list="msisdn-list" placeholder="+243XXXXXXXXX" autocomplete="off" />
+    <datalist id="msisdn-list">
       {% for tel in demo_phones %}
       <option value="{{ tel }}">{{ tel }}</option>
       {% endfor %}
-    </select>
+    </datalist>
 
     <label>Votre saisie</label>
     <input id="input" type="text" placeholder="PIN, 1, 2…" maxlength="32" />
