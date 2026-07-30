@@ -40,7 +40,7 @@ export default function DownloadAppFab() {
             Accédez à Simbisa depuis votre téléphone Android — scoring, crédits et Mobile Money en un seul endroit.
           </p>
           <a
-            href="/simbisa.apk"
+            href="https://srv1768871.hstgr.cloud/downloads/simbisa.apk"
             download="Simbisa.apk"
             style={{
               display: 'flex',
