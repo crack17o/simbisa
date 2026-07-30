@@ -29,7 +29,7 @@ export class ApiError extends Error {
 
 export function getStoredAuth() {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
@@ -37,8 +37,10 @@ export function getStoredAuth() {
 }
 
 export function setStoredAuth(user) {
-  if (user) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-  else sessionStorage.removeItem(STORAGE_KEY)
+  try {
+    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+    else localStorage.removeItem(STORAGE_KEY)
+  } catch { /* storage plein ou bloqué */ }
 }
 
 export async function refreshAccessToken(refreshToken) {
