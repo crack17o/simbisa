@@ -56,11 +56,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         profession = validated_data.pop('profession', '')
         date_naissance = validated_data.pop('date_naissance', None)
         role, _ = Role.objects.get_or_create(nom_role='Client')
-        user = Utilisateur.objects.create_user(role=role, password=password, **validated_data)
+        user = Utilisateur(role=role, **validated_data)
+        user.set_password(password)
+        # Set before save so the post_save signal (create_client_profile) sees them
         user._registration_commune = commune
         user._registration_adresse = adresse
         user._registration_profession = profession
         user._registration_date_naissance = date_naissance
+        user.save()
         return user
 
 

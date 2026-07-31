@@ -38,7 +38,11 @@ export default function Repayments() {
   const credit = item?.credit
 
   const handlePay = async () => {
-    if (!credit || !amount || +amount <= 0) return
+    if (!credit) return
+    if (!amount || +amount <= 0) {
+      toast.error('Entrez un montant valide.')
+      return
+    }
     setLoading(true)
     try {
       const res = await submitRepayment(credit.id, {
